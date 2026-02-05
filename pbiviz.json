@@ -1,0 +1,25 @@
+{
+  "visual": {
+    "supportUrl": "https://github.com/garrett-hamers/powerbi-markdown-viewer",
+    "description": "Render Markdown content with syntax highlighting and emoji support in Power BI reports",
+    "displayName": "Markdown Viewer",
+    "version": "1.0.0",
+    "guid": "markdownViewer7897821586924C6F9CD657CB549A6967",
+    "visualClassName": "Visual",
+    "gitHubUrl": "https://github.com/garrett-hamers/powerbi-markdown-viewer",
+    "name": "markdownViewer"
+  },
+  "author": {
+    "name": "Atlyn",
+    "email": "atlyn.help@gmail.com"
+  },
+  "externalJS": null,
+  "style": "style/visual.less",
+  "capabilities": "capabilities.json",
+  "dependencies": null,
+  "assets": {
+    "icon": "assets/icon.png"
+  },
+  "stringResources": [],
+  "apiVersion": "5.3.0"
+}

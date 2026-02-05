@@ -1,0 +1,50 @@
+{
+    "dataRoles": [
+        {
+            "displayName": "Markdown Content",
+            "name": "markdownContent",
+            "kind": "Measure"
+        }
+    ],
+    "objects": {
+        "markdown": {
+            "displayName": "Markdown Settings",
+            "properties": {
+                "fontFamily": {
+                    "displayName": "Font Family",
+                    "type": { "text": true }
+                },
+                "fontSize": {
+                    "displayName": "Font Size",
+                    "type": { "numeric": true }
+                },
+                "fontColor": {
+                    "displayName": "Font Color",
+                    "type": { "fill": { "solid": { "color": true } } }
+                },
+                "backgroundColor": {
+                    "displayName": "Background Color",
+                    "type": { "fill": { "solid": { "color": true } } }
+                },
+                "padding": {
+                    "displayName": "Padding",
+                    "type": { "numeric": true }
+                },
+                "showBorder": {
+                    "displayName": "Show Border",
+                    "type": { "bool": true }
+                }
+            }
+        }
+    },
+    "dataViewMappings": [
+        {
+            "single": {
+                "role": "markdownContent"
+            }
+        }
+    ],
+    "supportsHighlight": false,
+    "supportsLandingPage": true,
+    "privileges": []
+}

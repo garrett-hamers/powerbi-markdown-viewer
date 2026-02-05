@@ -1,0 +1,429 @@
+/* CSS Variables for theming */
+.markdown-container {
+    --accent-color: #118DFF;
+    --text-color: #111827;
+    --bg-color: #FFFFFF;
+    --border-color: #E5E7EB;
+    --code-bg: #F3F4F6;
+    --pre-bg: #1F2937;
+    --pre-text: #F9FAFB;
+    --table-header-bg: #F8FAFC;
+    --blockquote-bg: #F8FAFC;
+    
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text-color);
+    background-color: var(--bg-color);
+    padding: 20px;
+    overflow-y: auto;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+/* Dark Mode */
+.markdown-container.dark-mode {
+    --text-color: #F9FAFB;
+    --bg-color: #1F2937;
+    --border-color: #374151;
+    --code-bg: #374151;
+    --pre-bg: #111827;
+    --pre-text: #F9FAFB;
+    --table-header-bg: #374151;
+    --blockquote-bg: #374151;
+}
+
+.markdown-container {
+    h1 {
+        font-size: 2em;
+        font-weight: 600;
+        color: var(--text-color);
+        border-bottom: 2px solid var(--accent-color);
+        padding-bottom: 0.5em;
+        margin: 0 0 1em 0;
+    }
+
+    h2 {
+        font-size: 1.5em;
+        font-weight: 600;
+        color: var(--text-color);
+        margin: 1.5em 0 0.75em 0;
+    }
+
+    h3 {
+        font-size: 1.25em;
+        font-weight: 600;
+        color: var(--text-color);
+        margin: 1.25em 0 0.5em 0;
+    }
+
+    h4, h5, h6 {
+        font-size: 1.1em;
+        font-weight: 600;
+        color: var(--text-color);
+        margin: 1em 0 0.5em 0;
+    }
+
+    p {
+        margin: 0.75em 0;
+        font-size: inherit;
+        font-weight: normal;
+    }
+
+    ul, ol {
+        margin: 0.75em 0;
+        padding-left: 2em;
+    }
+
+    li {
+        margin: 0.25em 0;
+    }
+
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 1em 0;
+    }
+
+    th {
+        background: var(--table-header-bg);
+        border: 1px solid var(--border-color);
+        padding: 12px;
+        text-align: left;
+        font-weight: 600;
+    }
+
+    td {
+        border: 1px solid var(--border-color);
+        padding: 12px;
+    }
+
+    tr:nth-child(even) {
+        background: var(--table-header-bg);
+    }
+
+    code {
+        background: var(--code-bg);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: 'Consolas', 'Monaco', monospace;
+        font-size: 0.9em;
+    }
+
+    pre {
+        background: var(--pre-bg);
+        color: var(--pre-text);
+        padding: 16px;
+        border-radius: 8px;
+        overflow-x: auto;
+        margin: 1em 0;
+
+        code {
+            background: transparent;
+            padding: 0;
+            color: inherit;
+        }
+    }
+
+    blockquote {
+        border-left: 4px solid var(--accent-color);
+        margin: 1em 0;
+        padding: 0.5em 1em;
+        background: var(--blockquote-bg);
+    }
+
+    a {
+        color: var(--accent-color);
+        text-decoration: none;
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+
+    strong {
+        font-weight: 600;
+    }
+
+    em {
+        font-style: italic;
+        background: transparent;
+        padding: 0;
+    }
+
+    hr {
+        border: none;
+        border-top: 1px solid var(--border-color);
+        margin: 2em 0;
+    }
+
+    img {
+        max-width: 100%;
+        height: auto;
+    }
+
+    /* Collapsible sections */
+    details {
+        margin: 1em 0;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 0.5em 1em;
+        
+        summary {
+            cursor: pointer;
+            padding: 0.5em 0;
+            
+            &:hover {
+                color: var(--accent-color);
+            }
+        }
+    }
+
+    /* Mermaid diagrams */
+    .mermaid-diagram {
+        text-align: center;
+        margin: 1em 0;
+        padding: 1em;
+        background: var(--bg-color);
+        border-radius: 8px;
+        overflow-x: auto;
+        
+        svg {
+            max-width: 100%;
+            height: auto;
+        }
+    }
+
+    /* Table of Contents */
+    .toc {
+        background: var(--table-header-bg);
+        padding: 1em;
+        border-radius: 8px;
+        margin-bottom: 2em;
+        
+        ul {
+            list-style: none;
+            padding-left: 1em;
+        }
+        
+        a {
+            text-decoration: none;
+            
+            &:hover {
+                text-decoration: underline;
+            }
+        }
+    }
+}
+
+/* Highlight.js theme overrides */
+.hljs {
+    background: var(--pre-bg) !important;
+    color: var(--pre-text) !important;
+}
+
+.hljs-keyword { color: #C792EA; }
+.hljs-string { color: #C3E88D; }
+.hljs-number { color: #F78C6C; }
+.hljs-comment { color: #676E95; }
+.hljs-function { color: #82AAFF; }
+.hljs-class { color: #FFCB6B; }
+.hljs-variable { color: #F07178; }
+.hljs-operator { color: #89DDFF; }
+
+/* GitHub-style Alerts */
+.alert {
+    padding: 1em 1.5em;
+    border-radius: 8px;
+    margin: 1em 0;
+    border-left: 4px solid;
+    
+    strong {
+        display: block;
+        margin-bottom: 0.5em;
+    }
+    
+    p {
+        margin: 0;
+    }
+}
+
+.alert-note {
+    background: #DBEAFE;
+    border-color: #3B82F6;
+    color: #1E40AF;
+    
+    .dark-mode & {
+        background: #1E3A5F;
+        color: #93C5FD;
+    }
+}
+
+.alert-tip {
+    background: #D1FAE5;
+    border-color: #10B981;
+    color: #065F46;
+    
+    .dark-mode & {
+        background: #064E3B;
+        color: #6EE7B7;
+    }
+}
+
+.alert-important {
+    background: #EDE9FE;
+    border-color: #8B5CF6;
+    color: #5B21B6;
+    
+    .dark-mode & {
+        background: #4C1D95;
+        color: #C4B5FD;
+    }
+}
+
+.alert-warning {
+    background: #FEF3C7;
+    border-color: #F59E0B;
+    color: #92400E;
+    
+    .dark-mode & {
+        background: #78350F;
+        color: #FCD34D;
+    }
+}
+
+.alert-caution {
+    background: #FEE2E2;
+    border-color: #EF4444;
+    color: #991B1B;
+    
+    .dark-mode & {
+        background: #7F1D1D;
+        color: #FCA5A5;
+    }
+}
+
+/* Reading Stats */
+.reading-stats {
+    display: flex;
+    gap: 1.5em;
+    padding: 0.75em 1em;
+    background: var(--table-header-bg);
+    border-radius: 8px;
+    margin-bottom: 1.5em;
+    font-size: 0.9em;
+    opacity: 0.8;
+    
+    span {
+        display: flex;
+        align-items: center;
+        gap: 0.5em;
+    }
+}
+
+/* Task Lists */
+.task-item {
+    list-style: none;
+    margin-left: -1.5em;
+    
+    input[type="checkbox"] {
+        margin-right: 0.5em;
+        transform: scale(1.2);
+    }
+}
+
+/* Copy Button */
+.copy-button {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    color: #F9FAFB;
+    cursor: pointer;
+    font-size: 12px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    
+    &:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+}
+
+pre:hover .copy-button {
+    opacity: 1;
+}
+
+/* Print Styles */
+@media print {
+    .markdown-container {
+        background: white !important;
+        color: black !important;
+        padding: 0 !important;
+        
+        pre {
+            background: #f5f5f5 !important;
+            color: black !important;
+            border: 1px solid #ddd;
+        }
+        
+        .copy-button {
+            display: none !important;
+        }
+        
+        .reading-stats {
+            display: none !important;
+        }
+        
+        a {
+            color: black !important;
+            text-decoration: underline !important;
+        }
+        
+        .alert {
+            border: 1px solid #999;
+            background: #f9f9f9 !important;
+        }
+    }
+}
+
+.landing-page {
+    text-align: left;
+    
+    h2 {
+        color: var(--accent-color);
+        font-size: 1.5em;
+        margin-bottom: 0.5em;
+    }
+    
+    h3 {
+        font-size: 1.1em;
+        margin-top: 1.5em;
+        margin-bottom: 0.5em;
+    }
+    
+    p {
+        opacity: 0.8;
+        margin: 0.5em 0;
+    }
+    
+    ul {
+        padding-left: 1.5em;
+        
+        li {
+            margin: 0.3em 0;
+        }
+    }
+}
+
+.placeholder, .error {
+    opacity: 0.7;
+    font-style: italic;
+    padding: 20px;
+}
+
+.error {
+    color: #DC2626;
+}
