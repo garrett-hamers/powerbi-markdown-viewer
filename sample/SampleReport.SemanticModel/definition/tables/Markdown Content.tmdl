@@ -1,41 +1,29 @@
 table 'Markdown Content'
-lineageTag: 12345678-1234-1234-1234-123456789abc
+	lineageTag: 12345678-1234-1234-1234-123456789abc
 
-measure 'Sample Markdown' =
-VAR NL = UNICHAR(10)
-RETURN
-"# Welcome to Markdown Viewer :rocket:" & NL & NL &
-"This custom visual renders **Markdown** content directly in Power BI!" & NL & NL &
-"## Features :sparkles:" & NL & NL &
-"- **Headers** - H1 through H6" & NL &
-"- **Bold** and *italic* text" & NL &
-"- `Inline code` formatting" & NL &
-"- Emoji support :heart: :fire: :star:" & NL & NL &
-"## Code Blocks :computer:" & NL & NL &
-"```python" & NL &
-"def hello():" & NL &
-"    print('Hello from Markdown Viewer!')" & NL &
-"```" & NL & NL &
-"## Tables :memo:" & NL & NL &
-"| Feature | Status |" & NL &
-"|---------|--------|" & NL &
-"| Markdown | :check: |" & NL &
-"| Syntax Highlighting | :check: |" & NL &
-"| Emoji | :check: |" & NL & NL &
-"## Links" & NL & NL &
-"Visit [GitHub](https://github.com) for more info."
-lineageTag: 87654321-4321-4321-4321-cba987654321
+	measure 'Sample Markdown' =
+			VAR NL = UNICHAR(10)
+			RETURN
+			"# Welcome to Markdown Viewer :rocket:" & NL & NL &
+			"This visual renders **Markdown** in Power BI!" & NL & NL &
+			"## Features" & NL &
+			"- Headers and formatting" & NL &
+			"- Emoji support :heart: :star:" & NL &
+			"- Code syntax highlighting"
+		lineageTag: 87654321-4321-4321-4321-cba987654321
 
-column DummyColumn
-dataType: string
-lineageTag: abcdef12-3456-7890-abcd-ef1234567890
-summarizeBy: none
-sourceColumn: DummyColumn
+	column DummyColumn
+		dataType: string
+		lineageTag: abcdef12-3456-7890-abcd-ef1234567890
+		summarizeBy: none
+		sourceColumn: DummyColumn
 
-partition 'Markdown Content' = m
-mode: import
-source =
-let
-    Source = #table({"DummyColumn"}, {{"Sample"}})
-in
-    Source
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Markdown Content' = m
+		mode: import
+		source =
+				let
+				    Source = #table({"DummyColumn"}, {{"Sample"}})
+				in
+				    Source
