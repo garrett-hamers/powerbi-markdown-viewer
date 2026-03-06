@@ -10,7 +10,7 @@
   "scripts": {
     "pbiviz": "pbiviz",
     "start": "pbiviz start",
-    "package": "pbiviz package",
+    "package": "pbiviz package && powershell -Command \"Get-ChildItem dist/*.pbiviz | Rename-Item -NewName atlynMarkdownViewer.pbiviz -Force\"",
     "lint": "npx eslint ."
   },
   "dependencies": {
