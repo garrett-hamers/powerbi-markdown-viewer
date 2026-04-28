@@ -1,0 +1,19 @@
+{
+  "metadata": {
+    "columns": [
+      {
+        "displayName": "Markdown",
+        "queryName": "Table.Markdown",
+        "type": {
+          "text": true
+        },
+        "roles": {
+          "content": true
+        }
+      }
+    ]
+  },
+  "single": {
+    "value": "# Release Notes :rocket:\n\n- New feature: dark mode :tada:\n- Hotfix deployed :fire:\n- All tests passing :check:\n- Known limitation :warning:\n\nThanks to the team :heart:"
+  }
+}

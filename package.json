@@ -1,33 +1,45 @@
 {
-  "name": "visual",
-  "description": "default_template_value",
+  "name": "powerbi-markdown-viewer",
+  "description": "Render Markdown content with syntax highlighting and emoji support in Power BI reports",
   "version": "1.0.0.0",
   "repository": {
-    "type": "default_template_value",
-    "url": "default_template_value"
+    "type": "git",
+    "url": "https://github.com/garrett-hamers/powerbi-markdown-viewer.git"
   },
   "license": "MIT",
   "scripts": {
     "pbiviz": "pbiviz",
     "start": "pbiviz start",
-    "package": "pbiviz package && powershell -Command \"Get-ChildItem dist/*.pbiviz | Rename-Item -NewName atlynMarkdownViewer.pbiviz -Force\"",
-    "lint": "npx eslint ."
+    "package": "powershell -NoProfile -Command \"Remove-Item dist/*.pbiviz -Force -ErrorAction SilentlyContinue\" && pbiviz package && powershell -NoProfile -Command \"Get-ChildItem dist/*.pbiviz | Rename-Item -NewName atlynMarkdownViewer.pbiviz -Force\"",
+    "lint": "npx eslint .",
+    "test": "vitest run",
+    "preview:build": "npx esbuild ./e2e/visual-harness-entry.ts --bundle --outfile=./e2e/visual-harness-bundle.js --format=iife --target=es2020 --loader:.less=empty",
+    "preview": "npm run preview:build && npx playwright test --config playwright.config.ts",
+    "matrix": "node scripts/capabilities-matrix.mjs"
   },
   "dependencies": {
     "@types/d3": "7.4.3",
     "d3": "7.9.0",
+    "dompurify": "^3.4.1",
     "highlight.js": "^11.11.1",
     "marked": "^4.3.0",
-    "mathjax": "^3.2.2",
-    "mathjax-full": "^3.2.1",
-    "mermaid": "^11.12.2",
     "powerbi-visuals-api": "~5.3.0",
     "powerbi-visuals-utils-formattingmodel": "6.0.4"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "@types/dompurify": "^3.0.5",
     "@typescript-eslint/eslint-plugin": "^8.8.0",
+    "esbuild": "^0.28.0",
     "eslint": "^9.11.1",
     "eslint-plugin-powerbi-visuals": "^1.0.0",
-    "typescript": "5.5.4"
-  }
+    "happy-dom": "^20.9.0",
+    "less": "^4.6.4",
+    "typescript": "5.5.4",
+    "vitest": "^4.1.5"
+  },
+  "bugs": {
+    "url": "https://github.com/garrett-hamers/powerbi-markdown-viewer/issues"
+  },
+  "homepage": "https://github.com/garrett-hamers/powerbi-markdown-viewer#readme"
 }

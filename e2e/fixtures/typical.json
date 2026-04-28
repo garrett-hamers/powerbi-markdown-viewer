@@ -1,0 +1,19 @@
+{
+  "metadata": {
+    "columns": [
+      {
+        "displayName": "Markdown",
+        "queryName": "Table.Markdown",
+        "type": {
+          "text": true
+        },
+        "roles": {
+          "content": true
+        }
+      }
+    ]
+  },
+  "single": {
+    "value": "# Q3 Financial Report\n\n> Revenue growth exceeded expectations this quarter, driven by strong enterprise adoption.\n\n## Summary\n\n- Total Revenue: **$12.4M** (+18% YoY)\n- Gross Margin: **64%**\n- Active Customers: **1,284**\n- NPS: **52**\n\n## Regional Breakdown\n\n| Region        | Revenue  | Growth |\n| ------------- | -------- | ------ |\n| North America | $7.2M    | +14%   |\n| EMEA          | $3.1M    | +22%   |\n| APAC          | $1.6M    | +31%   |\n| LATAM         | $0.5M    | +8%    |\n\n## Next Steps\n\n1. Expand APAC sales team by Q4\n2. Launch mid-market pricing tier\n3. Invest in customer success automation"
+  }
+}

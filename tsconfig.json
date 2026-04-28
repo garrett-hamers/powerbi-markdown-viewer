@@ -3,6 +3,7 @@
         "allowJs": false,
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
+        "allowSyntheticDefaultImports": true,
         "target": "es2022",
         "sourceMap": true,
         "outDir": "./.tmp/build/",

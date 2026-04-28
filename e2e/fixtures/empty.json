@@ -1,0 +1,19 @@
+{
+  "metadata": {
+    "columns": [
+      {
+        "displayName": "Markdown",
+        "queryName": "Table.Markdown",
+        "type": {
+          "text": true
+        },
+        "roles": {
+          "content": true
+        }
+      }
+    ]
+  },
+  "single": {
+    "value": ""
+  }
+}

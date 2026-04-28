@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Markdown Viewer — Preview</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/styles/github.min.css">
+<style>
+  body { margin: 0; padding: 20px; background: #f5f5f5; font-family: "Segoe UI", sans-serif; }
+  h2.section-heading { margin: 24px 0 8px; color: #333; font-size: 13px; font-weight: 600; }
+  .host {
+    background: #fff;
+    border-radius: 8px;
+    border: 1px solid #E5E7EB;
+    margin-bottom: 16px;
+    min-height: 40px;
+  }
+  .host .markdown-container pre { padding: 12px; border-radius: 6px; overflow: auto; }
+  .host .markdown-container code { font-family: "Consolas", "Monaco", monospace; }
+  .host .markdown-container table { border-collapse: collapse; }
+  .host .markdown-container th, .host .markdown-container td { padding: 6px 10px; }
+  .host .markdown-container blockquote { padding-left: 12px; }
+  .error { color: #b91c1c; background: #fee2e2; padding: 10px; border-radius: 6px; }
+  .xss-note { background: #fef3c7; padding: 8px; border-left: 4px solid #f59e0b; margin-bottom: 8px; font-size: 12px; color: #92400e; }
+</style>
+</head>
+<body>
+
+<h2 class="section-heading">1. Typical markdown (headers, lists, tables, code)</h2>
+<div id="typical" class="host"></div>
+
+<h2 class="section-heading">2. Emoji rendering (:rocket: :fire: :tada:)</h2>
+<div id="emoji" class="host"></div>
+
+<h2 class="section-heading">3. Syntax-highlighted code block</h2>
+<div id="code" class="host"></div>
+
+<h2 class="section-heading">4. XSS payload — verifies sanitization blocks all vectors</h2>
+<div class="xss-note">
+  The visual sanitizes <code>marked.parse()</code> output via DOMPurify before insertion.
+  Raw <code>&lt;script&gt;</code>, <code>onerror</code>, <code>javascript:</code> URLs and other XSS vectors are stripped.
+</div>
+<div id="xss" class="host"></div>
+
+<h2 class="section-heading">5. Empty / landing page</h2>
+<div id="landing" class="host"></div>
+
+<script src="./visual-harness-bundle.js"></script>
+</body>
+</html>

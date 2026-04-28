@@ -1,0 +1,19 @@
+{
+  "metadata": {
+    "columns": [
+      {
+        "displayName": "Markdown",
+        "queryName": "Table.Markdown",
+        "type": {
+          "text": true
+        },
+        "roles": {
+          "content": true
+        }
+      }
+    ]
+  },
+  "single": {
+    "value": "# Sanitization Test\n\n<script>alert('xss-1')</script>\n\n<img src=x onerror=\"alert('xss-2')\">\n\n<a href=\"javascript:alert('xss-3')\">click me</a>\n\n<iframe src=\"https://evil.example.com\"></iframe>\n\n<div onclick=\"alert('xss-4')\">hover</div>\n\nNormal paragraph should still render."
+  }
+}
