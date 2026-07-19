@@ -106,14 +106,18 @@ describe("certification behavior", () => {
         const safeLink = links.find((link) => link.textContent === "Safe link");
         const unsafeLink = links.find((link) => link.textContent === "Unsafe link");
 
-        expect(safeLink?.getAttribute("href")).toBe("https://example.com/docs");
+        expect(safeLink?.hasAttribute("href")).toBe(false);
+        expect(safeLink?.getAttribute("data-safe-href")).toBe("https://example.com/docs");
+        expect(safeLink?.getAttribute("role")).toBe("link");
+        expect(safeLink?.getAttribute("tabindex")).toBe("0");
         expect(safeLink?.hasAttribute("target")).toBe(false);
         expect(safeLink?.hasAttribute("rel")).toBe(false);
         expect(safeLink?.hasAttribute("referrerpolicy")).toBe(false);
         expect(unsafeLink?.hasAttribute("href")).toBe(false);
+        expect(unsafeLink?.hasAttribute("data-safe-href")).toBe(false);
     });
 
-    it("opens only validated HTTPS links through the Power BI host", () => {
+    it("routes safe link activation through the Power BI host without native navigation", () => {
         const { element, harness, visual } = createVisual();
         visual.update(createUpdateOptions(
             "[Safe link](https://example.com/docs) [Unsafe link](http://example.com/docs)"
@@ -125,14 +129,52 @@ describe("certification behavior", () => {
         expect(safeLink).toBeDefined();
         expect(unsafeLink).toBeDefined();
 
-        const safeClick = new MouseEvent("click", { bubbles: true, cancelable: true });
-        const unsafeClick = new MouseEvent("click", { bubbles: true, cancelable: true });
-        safeLink!.dispatchEvent(safeClick);
-        unsafeLink!.dispatchEvent(unsafeClick);
+        const primaryClick = new MouseEvent("click", {
+            bubbles: true,
+            button: 0,
+            cancelable: true
+        });
+        const middleClick = new MouseEvent("auxclick", {
+            bubbles: true,
+            button: 1,
+            cancelable: true
+        });
+        const enterKey = new KeyboardEvent("keydown", {
+            bubbles: true,
+            cancelable: true,
+            key: "Enter"
+        });
+        const spaceKey = new KeyboardEvent("keydown", {
+            bubbles: true,
+            cancelable: true,
+            key: " "
+        });
 
-        expect(safeClick.defaultPrevented).toBe(true);
-        expect(unsafeClick.defaultPrevented).toBe(true);
-        expect(harness.launchedUrls).toEqual(["https://example.com/docs"]);
+        safeLink!.dispatchEvent(primaryClick);
+        safeLink.dispatchEvent(middleClick);
+        safeLink.dispatchEvent(enterKey);
+        safeLink.dispatchEvent(spaceKey);
+
+        expect(primaryClick.defaultPrevented).toBe(true);
+        expect(middleClick.defaultPrevented).toBe(true);
+        expect(enterKey.defaultPrevented).toBe(true);
+        expect(spaceKey.defaultPrevented).toBe(true);
+        expect(safeLink.hasAttribute("href")).toBe(false);
+        expect(harness.launchedUrls).toEqual([
+            "https://example.com/docs",
+            "https://example.com/docs",
+            "https://example.com/docs",
+            "https://example.com/docs"
+        ]);
+
+        unsafeLink!.dispatchEvent(new MouseEvent("click", { bubbles: true, button: 0 }));
+        unsafeLink.dispatchEvent(new MouseEvent("auxclick", { bubbles: true, button: 1 }));
+        unsafeLink.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "Enter" }));
+        unsafeLink.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: " " }));
+
+        expect(unsafeLink.hasAttribute("href")).toBe(false);
+        expect(unsafeLink.hasAttribute("data-safe-href")).toBe(false);
+        expect(harness.launchedUrls).toHaveLength(4);
     });
 
     it("supports data-point and empty-space context-menu modes", () => {

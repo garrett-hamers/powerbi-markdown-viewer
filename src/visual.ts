@@ -69,21 +69,22 @@ export class Visual implements IVisual {
         });
     };
     private readonly linkClickHandler = (event: MouseEvent): void => {
-        const eventTarget = event.target;
-        if (!(eventTarget instanceof Element)) {
+        if (event.button !== 0) {
             return;
         }
-
-        const anchor = eventTarget.closest("a");
-        if (!anchor || !this.container.contains(anchor)) {
+        this.activateSafeLink(event);
+    };
+    private readonly linkAuxClickHandler = (event: MouseEvent): void => {
+        if (event.button !== 1) {
             return;
         }
-
-        event.preventDefault();
-        const href = this.getSafeHttpsUrl(anchor.getAttribute("href") ?? "");
-        if (href) {
-            this.host.launchUrl(href);
+        this.activateSafeLink(event);
+    };
+    private readonly linkKeyDownHandler = (event: KeyboardEvent): void => {
+        if (event.key !== "Enter" && event.key !== " ") {
+            return;
         }
+        this.activateSafeLink(event);
     };
 
     constructor(options: VisualConstructorOptions) {
@@ -100,6 +101,8 @@ export class Visual implements IVisual {
         this.target.appendChild(this.container);
         this.target.addEventListener("contextmenu", this.contextMenuHandler);
         this.container.addEventListener("click", this.linkClickHandler);
+        this.container.addEventListener("auxclick", this.linkAuxClickHandler);
+        this.container.addEventListener("keydown", this.linkKeyDownHandler);
         
         marked.setOptions({ gfm: true, breaks: true });
     }
@@ -189,17 +192,41 @@ export class Visual implements IVisual {
 
             if (!href) {
                 anchor.removeAttribute("href");
+                anchor.removeAttribute("data-safe-href");
+                anchor.removeAttribute("role");
+                anchor.removeAttribute("tabindex");
                 anchor.removeAttribute("target");
                 anchor.removeAttribute("rel");
                 anchor.removeAttribute("referrerpolicy");
                 return;
             }
 
-            anchor.setAttribute("href", href);
+            anchor.removeAttribute("href");
+            anchor.setAttribute("data-safe-href", href);
+            anchor.setAttribute("role", "link");
+            anchor.setAttribute("tabindex", "0");
             anchor.removeAttribute("target");
             anchor.removeAttribute("rel");
             anchor.removeAttribute("referrerpolicy");
         });
+    }
+
+    private activateSafeLink(event: Event): void {
+        const eventTarget = event.target;
+        if (!(eventTarget instanceof Element)) {
+            return;
+        }
+
+        const anchor = eventTarget.closest("a[data-safe-href]");
+        if (!(anchor instanceof HTMLAnchorElement) || !this.container.contains(anchor)) {
+            return;
+        }
+
+        event.preventDefault();
+        const href = this.getSafeHttpsUrl(anchor.getAttribute("data-safe-href") ?? "");
+        if (href) {
+            this.host.launchUrl(href);
+        }
     }
 
     private getSafeHttpsUrl(rawUrl: string): string | undefined {
@@ -286,5 +313,7 @@ export class Visual implements IVisual {
     public destroy(): void {
         this.target.removeEventListener("contextmenu", this.contextMenuHandler);
         this.container.removeEventListener("click", this.linkClickHandler);
+        this.container.removeEventListener("auxclick", this.linkAuxClickHandler);
+        this.container.removeEventListener("keydown", this.linkKeyDownHandler);
     }
 }
