@@ -16,6 +16,7 @@ export interface MockHostHarness {
     contextMenuCalls: ContextMenuCall[];
     eventCalls: string[];
     failureReasons: string[];
+    launchedUrls: string[];
     measureIds: string[];
     dataPointSelectionId: ISelectionId;
 }
@@ -24,6 +25,7 @@ export function createMockHost(options: { failSelectionBuilder?: boolean } = {})
     const contextMenuCalls: ContextMenuCall[] = [];
     const eventCalls: string[] = [];
     const failureReasons: string[] = [];
+    const launchedUrls: string[] = [];
     const measureIds: string[] = [];
 
     const dataPointSelectionId = {
@@ -75,7 +77,10 @@ export function createMockHost(options: { failSelectionBuilder?: boolean } = {})
     const host = {
         createSelectionManager: () => selectionManager,
         createSelectionIdBuilder,
-        eventService
+        eventService,
+        launchUrl: (url: string) => {
+            launchedUrls.push(url);
+        }
     } as IVisualHost;
 
     return {
@@ -83,6 +88,7 @@ export function createMockHost(options: { failSelectionBuilder?: boolean } = {})
         contextMenuCalls,
         eventCalls,
         failureReasons,
+        launchedUrls,
         measureIds,
         dataPointSelectionId
     };

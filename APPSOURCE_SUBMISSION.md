@@ -18,18 +18,19 @@
 - Power BI API: `5.11.0`; exact packaging tools `7.1.2` are installed from `package-lock.json`.
 - The archive contains both context-menu modes and the complete rendering-event lifecycle.
 - The Markdown sanitizer uses narrow tag/attribute allowlists; regression coverage proves legacy `background` URLs on tables/cells and other automatic resource attributes cannot survive.
+- Validated HTTPS link clicks are intercepted and routed through `host.launchUrl`; unsafe or non-HTTPS links remain inert.
 - Empty-data updates initialize a valid formatting model before `getFormattingModel` is called.
 - The certification audit reports no external requests; application source contains no `innerHTML`, `fetch`, `XMLHttpRequest`, or `eval`.
-- Clean validation: `npm ci`, lint, TypeScript, 10 focused tests, and `npm audit --audit-level=moderate` (including locked Power BI tools) with zero vulnerabilities.
-- Embedded PBIVIZ metadata/content SHA-256: `4B6C107E0ECFDE416F2A41ABD30528105FD27B665D66E80A4F95A58FD0DCAAD8`
-- Current archive SHA-256: `CC5B1FC344E1EE6189874355C5FF44F1420302B6B91897C9FC212E1B2675FCBD`
+- Clean validation: `npm ci`, lint, TypeScript, 11 focused tests, and `npm audit --audit-level=moderate` (including locked Power BI tools) with zero vulnerabilities.
+- Embedded PBIVIZ metadata/content SHA-256: `AF5821A76F3FFD4809EAB13CD804F67FD04E954225DDF45382FF6AB254A88741`
+- Current archive SHA-256: `F0767838CCAB4D6CC80CF35CED25C5D33DF5F7C461D2052D596CDD45E0FEC7BA`
 
 `pbiviz package` writes ZIP entry timestamps, so the outer archive SHA-256 changes on each rebuild even when the embedded payload is identical. Recompute and record the outer hash immediately before upload; use the embedded payload hash above to verify source/package content stability.
 
 ### Remaining Required or Manual Evidence
 
 - Download the failed submission's certification report when access is available and preserve its exact policy IDs.
-- In Power BI Desktop Developer mode, import `1.0.2.0`, verify incoming filters and both context-menu modes, save/reopen, confirm offline operation, and export a PBIX containing the same visual version. Microsoft requires the PBIX and PBIVIZ versions to match and the sample to work offline.
+- The tracked `sample\SampleReport.pbix` is Microsoft Information Protection/RMS-protected and contains visual version `1.0.0.0`. Do not rewrite this binary with repository automation. Replace it manually in Power BI Desktop with an unprotected PBIX that works offline and contains exact visual version `1.0.2.0`; verify incoming filters, both context-menu modes, save/reopen, and safe-link launching before upload.
 - Push the exact source commit to a lowercase `certification` branch before requesting the certified badge.
 - The current single-measure visual does not expose tooltip or outbound cross-filter interactions. Incoming filters should recompute `dataView.single` and require Desktop validation. Document tooltip/outbound-selection cases as not applicable for this visual contract unless the certification report or Desktop test requires a separately approved interaction design.
 
@@ -65,7 +66,7 @@ References:
 
 ### Sample Report
 - [x] Sample PBIP project (`/sample/SampleReport.pbip`)
-- [ ] In Power BI Desktop, import visual version 1.0.2.0 and save/export a matching `.pbix`
+- [ ] Replace the protected stale `sample\SampleReport.pbix` with an unprotected offline PBIX saved using exact visual version 1.0.2.0
 
 ## Submission Steps
 

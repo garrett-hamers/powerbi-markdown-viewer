@@ -68,6 +68,23 @@ export class Visual implements IVisual {
             y: event.clientY
         });
     };
+    private readonly linkClickHandler = (event: MouseEvent): void => {
+        const eventTarget = event.target;
+        if (!(eventTarget instanceof Element)) {
+            return;
+        }
+
+        const anchor = eventTarget.closest("a");
+        if (!anchor || !this.container.contains(anchor)) {
+            return;
+        }
+
+        event.preventDefault();
+        const href = this.getSafeHttpsUrl(anchor.getAttribute("href") ?? "");
+        if (href) {
+            this.host.launchUrl(href);
+        }
+    };
 
     constructor(options: VisualConstructorOptions) {
         this.host = options.host;
@@ -82,6 +99,7 @@ export class Visual implements IVisual {
         this.container.setAttribute("aria-label", "Markdown content");
         this.target.appendChild(this.container);
         this.target.addEventListener("contextmenu", this.contextMenuHandler);
+        this.container.addEventListener("click", this.linkClickHandler);
         
         marked.setOptions({ gfm: true, breaks: true });
     }
@@ -167,9 +185,9 @@ export class Visual implements IVisual {
     private prepareSafeLinks(root: ParentNode): void {
         root.querySelectorAll("a[href]").forEach((link) => {
             const anchor = link as HTMLAnchorElement;
-            const href = anchor.getAttribute("href")?.trim() ?? "";
+            const href = this.getSafeHttpsUrl(anchor.getAttribute("href") ?? "");
 
-            if (!/^https:\/\//i.test(href)) {
+            if (!href) {
                 anchor.removeAttribute("href");
                 anchor.removeAttribute("target");
                 anchor.removeAttribute("rel");
@@ -177,10 +195,20 @@ export class Visual implements IVisual {
                 return;
             }
 
-            anchor.target = "_blank";
-            anchor.rel = "noopener noreferrer";
-            anchor.setAttribute("referrerpolicy", "no-referrer");
+            anchor.setAttribute("href", href);
+            anchor.removeAttribute("target");
+            anchor.removeAttribute("rel");
+            anchor.removeAttribute("referrerpolicy");
         });
+    }
+
+    private getSafeHttpsUrl(rawUrl: string): string | undefined {
+        try {
+            const url = new URL(rawUrl.trim());
+            return url.protocol === "https:" ? url.href : undefined;
+        } catch {
+            return undefined;
+        }
     }
 
     private applySyntaxHighlighting(root: ParentNode): void {
@@ -257,5 +285,6 @@ export class Visual implements IVisual {
 
     public destroy(): void {
         this.target.removeEventListener("contextmenu", this.contextMenuHandler);
+        this.container.removeEventListener("click", this.linkClickHandler);
     }
 }

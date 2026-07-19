@@ -107,10 +107,32 @@ describe("certification behavior", () => {
         const unsafeLink = links.find((link) => link.textContent === "Unsafe link");
 
         expect(safeLink?.getAttribute("href")).toBe("https://example.com/docs");
-        expect(safeLink?.getAttribute("target")).toBe("_blank");
-        expect(safeLink?.getAttribute("rel")).toBe("noopener noreferrer");
-        expect(safeLink?.getAttribute("referrerpolicy")).toBe("no-referrer");
+        expect(safeLink?.hasAttribute("target")).toBe(false);
+        expect(safeLink?.hasAttribute("rel")).toBe(false);
+        expect(safeLink?.hasAttribute("referrerpolicy")).toBe(false);
         expect(unsafeLink?.hasAttribute("href")).toBe(false);
+    });
+
+    it("opens only validated HTTPS links through the Power BI host", () => {
+        const { element, harness, visual } = createVisual();
+        visual.update(createUpdateOptions(
+            "[Safe link](https://example.com/docs) [Unsafe link](http://example.com/docs)"
+        ));
+
+        const links = Array.from(element.querySelectorAll("a"));
+        const safeLink = links.find((link) => link.textContent === "Safe link");
+        const unsafeLink = links.find((link) => link.textContent === "Unsafe link");
+        expect(safeLink).toBeDefined();
+        expect(unsafeLink).toBeDefined();
+
+        const safeClick = new MouseEvent("click", { bubbles: true, cancelable: true });
+        const unsafeClick = new MouseEvent("click", { bubbles: true, cancelable: true });
+        safeLink!.dispatchEvent(safeClick);
+        unsafeLink!.dispatchEvent(unsafeClick);
+
+        expect(safeClick.defaultPrevented).toBe(true);
+        expect(unsafeClick.defaultPrevented).toBe(true);
+        expect(harness.launchedUrls).toEqual(["https://example.com/docs"]);
     });
 
     it("supports data-point and empty-space context-menu modes", () => {
