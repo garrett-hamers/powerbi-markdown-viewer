@@ -1,4 +1,4 @@
-# Atlyn Markdown
+# Atlyn Markdown Viewer
 
 A custom Power BI visual that renders Markdown content directly in your reports with GitHub Flavored Markdown support, syntax highlighting, and emoji shortcodes.
 
@@ -7,7 +7,7 @@ A custom Power BI visual that renders Markdown content directly in your reports 
 ## Features
 
 ### 📝 Markdown Rendering
-Full GitHub Flavored Markdown (GFM) support including headers, bold, italic, lists, links, blockquotes, and more.
+GitHub Flavored Markdown (GFM) patterns including headers, bold, italic, lists, HTTPS links, blockquotes, and more. Raw HTML is sanitized, and remote images or media are not loaded automatically.
 
 ### 💻 Syntax Highlighting
 Automatic language detection and syntax highlighting for code blocks powered by [highlight.js](https://highlightjs.org/).
@@ -44,7 +44,7 @@ Adjust the visual appearance through the Power BI Format pane:
 
 ## Usage
 
-1. Add the **Atlyn Markdown** visual to your report canvas
+1. Add the **Atlyn Markdown Viewer** visual to your report canvas
 2. Create a DAX measure that returns markdown text
 3. Drag the measure to the **Markdown Content** field well
 

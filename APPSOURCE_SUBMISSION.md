@@ -9,21 +9,22 @@
 
 ### Visual Package
 - [x] `.pbiviz` file - Located in `/dist/` folder
-- [x] Version: 1.0.0.0
+- [x] Version: 1.0.2.0
 
 ### Icons & Images
 - [x] 20x20 icon (`/assets/icon.png`) - Used in visual
 - [x] 300x300 icon (`/assets/icon-300x300.png`) - For AppSource listing
-- [ ] Screenshots (1366x768 or 1280x720 PNG) - **You need to capture these from Power BI Desktop**
+- [ ] Screenshots (exactly 1366x768 PNG, maximum 1024 KB) - **You need to capture these from Power BI Desktop**
 
 ### Documentation
-- [x] Privacy Policy - https://github.com/garrett-hamers/powerbi-markdown-viewer/blob/main/PRIVACY.md
-- [x] Support URL - https://github.com/garrett-hamers/powerbi-markdown-viewer
+- [x] Privacy Policy - https://www.atlynco.com/legal/privacy
+- [x] Support URL - https://www.atlynco.com/docs/faq
+- [x] Terms/EULA - https://www.atlynco.com/legal/terms
 - [x] README with usage instructions
 
 ### Sample Report
 - [x] Sample PBIP project (`/sample/SampleReport.pbip`)
-- [ ] Export as .pbix from Power BI Desktop for submission
+- [ ] In Power BI Desktop, import visual version 1.0.2.0 and save/export a matching `.pbix`
 
 ## Submission Steps
 
@@ -36,21 +37,22 @@
    - Enter offer ID (e.g., "markdown-viewer")
 
 3. **Offer Setup**
-   - Offer alias: Markdown Viewer
+   - Offer alias: Atlyn Markdown Viewer
    - Type: Power BI visual
 
 4. **Properties**
    - Categories: Utility, Text
    - Industries: (select applicable)
-   - App version: 1.0.0.0
+   - App version: 1.0.2.0
 
 5. **Offer Listing**
-   - Name: Markdown Viewer
+   - Name: Atlyn Markdown Viewer
    - Summary: Render Markdown content with syntax highlighting and emoji in Power BI
    - Description: (use README content)
    - Search keywords: markdown, documentation, readme, text, syntax
-   - Support link: https://github.com/garrett-hamers/powerbi-markdown-viewer
-   - Privacy policy: https://github.com/garrett-hamers/powerbi-markdown-viewer/blob/main/PRIVACY.md
+   - Support link: https://www.atlynco.com/docs/faq
+   - Privacy policy: https://www.atlynco.com/legal/privacy
+   - Terms/EULA: https://www.atlynco.com/legal/terms
 
 6. **Technical Configuration**
    - Upload `.pbiviz` file

@@ -1,6 +1,6 @@
 # Privacy Policy
 
-## Power BI Markdown Viewer Visual
+## Atlyn Markdown Viewer for Power BI
 
 **Effective Date:** February 2026
 
