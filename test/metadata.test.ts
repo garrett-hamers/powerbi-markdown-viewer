@@ -26,6 +26,12 @@ describe("certification metadata", () => {
         expect(packageManifest.scripts.package).toContain("Expected exactly one generated .pbiviz file");
     });
 
+    it("uses the locked local Power BI toolchain", () => {
+        expect(packageManifest.devDependencies["powerbi-visuals-tools"]).toBe("7.1.2");
+        expect(packageManifest.scripts.package).not.toContain("npx");
+        expect(packageManifest.overrides.sockjs.uuid).toBe("11.1.1");
+    });
+
     it("declares no external runtime privileges", () => {
         expect(capabilities.privileges).toEqual([]);
         expect(capabilities.supportsEmptyDataView).toBe(true);

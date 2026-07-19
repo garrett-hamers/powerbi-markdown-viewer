@@ -10,17 +10,19 @@
 
 ### Confirmed Source and Package State
 
-- Package implementation commit: `ed7f47f86698b7d2e2734be99a1340c38bdfa315`
+- Package implementation history: base commit `ed7f47f86698b7d2e2734be99a1340c38bdfa315` plus this follow-up commit.
 - Artifact: `dist\atlynMarkdownViewer.pbiviz`
 - Display name: `Atlyn Markdown Viewer`
 - Version: `1.0.2.0`
 - GUID: `markdownViewer7897821586924C6F9CD657CB549A6967` (unchanged)
-- Power BI API: `5.11.0`; packaging tools: `7.1.2`
+- Power BI API: `5.11.0`; exact packaging tools `7.1.2` are installed from `package-lock.json`.
 - The archive contains both context-menu modes and the complete rendering-event lifecycle.
+- The Markdown sanitizer uses narrow tag/attribute allowlists; regression coverage proves legacy `background` URLs on tables/cells and other automatic resource attributes cannot survive.
+- Empty-data updates initialize a valid formatting model before `getFormattingModel` is called.
 - The certification audit reports no external requests; application source contains no `innerHTML`, `fetch`, `XMLHttpRequest`, or `eval`.
-- Clean validation: `npm ci`, lint, TypeScript, 8 focused tests, and `npm audit --audit-level=moderate` with zero vulnerabilities.
-- Embedded PBIVIZ metadata/content SHA-256: `66D58C86B163BD2EFE0B0A33D03E1B44765F9902070FCBA43A42208FAE531679`
-- Current archive SHA-256: `0148A88F6677F818F1EF8B49595686F133727C24A85E5F4732CC9086069AFAE1`
+- Clean validation: `npm ci`, lint, TypeScript, 10 focused tests, and `npm audit --audit-level=moderate` (including locked Power BI tools) with zero vulnerabilities.
+- Embedded PBIVIZ metadata/content SHA-256: `4B6C107E0ECFDE416F2A41ABD30528105FD27B665D66E80A4F95A58FD0DCAAD8`
+- Current archive SHA-256: `CC5B1FC344E1EE6189874355C5FF44F1420302B6B91897C9FC212E1B2675FCBD`
 
 `pbiviz package` writes ZIP entry timestamps, so the outer archive SHA-256 changes on each rebuild even when the embedded payload is identical. Recompute and record the outer hash immediately before upload; use the embedded payload hash above to verify source/package content stability.
 

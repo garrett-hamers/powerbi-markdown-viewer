@@ -51,7 +51,7 @@ export class Visual implements IVisual {
     private eventService: IVisualEventService;
     private currentSelectionId?: ISelectionId;
     private readonly emptySelectionId = {} as ISelectionId;
-    private formattingSettings: VisualFormattingSettingsModel;
+    private formattingSettings = new VisualFormattingSettingsModel();
     private formattingSettingsService: FormattingSettingsService;
     private readonly contextMenuHandler = (event: MouseEvent): void => {
         event.preventDefault();
@@ -141,13 +141,18 @@ export class Visual implements IVisual {
 
     private createSafeFragment(rawHtml: string): DocumentFragment {
         const sanitizedHtml = DOMPurify.sanitize(rawHtml, {
-            USE_PROFILES: { html: true },
-            FORBID_TAGS: [
-                "audio", "base", "button", "embed", "form", "iframe", "img",
-                "input", "link", "meta", "object", "option", "select", "source",
-                "style", "textarea", "track", "video"
+            ALLOWED_TAGS: [
+                "a", "blockquote", "br", "code", "del", "details", "em",
+                "h1", "h2", "h3", "h4", "h5", "h6", "hr", "li", "ol",
+                "p", "pre", "strong", "summary", "table", "tbody", "td",
+                "th", "thead", "tr", "ul"
             ],
-            FORBID_ATTR: ["formaction", "poster", "src", "srcset", "style"]
+            ALLOWED_ATTR: [
+                "align", "class", "colspan", "href", "id", "open", "rel",
+                "reversed", "rowspan", "scope", "start", "target", "title"
+            ],
+            ALLOW_DATA_ATTR: false,
+            FORBID_ATTR: ["background"]
         });
         const parsedDocument = new DOMParser().parseFromString(sanitizedHtml, "text/html");
         const fragment = document.createDocumentFragment();

@@ -69,6 +69,16 @@ describe("certification behavior", () => {
             .toBe("Error: selection builder failed");
     });
 
+    it("builds a formatting model after an empty-data update", () => {
+        const { harness, visual } = createVisual();
+
+        visual.update(createUpdateOptions());
+        const formattingModel = visual.getFormattingModel();
+
+        expect(harness.eventCalls).toEqual(["started", "finished"]);
+        expect(formattingModel.cards).toHaveLength(1);
+    });
+
     it("sanitizes executable markup and automatic external resource loads", () => {
         const { element, visual } = createVisual();
         const markdown = [
@@ -76,6 +86,7 @@ describe("certification behavior", () => {
             "<script>alert('xss')</script>",
             "<img src=\"https://evil.example/track.png\" onerror=\"alert(1)\">",
             "<form action=\"https://evil.example\"><input name=\"secret\"></form>",
+            "<table background=\"https://evil.example/table.png\"><tr><td background=\"https://evil.example/cell.png\">Cell</td></tr></table>",
             "[Safe link](https://example.com/docs)",
             "[Unsafe link](javascript:alert(1))"
         ].join("\n\n");
@@ -85,8 +96,11 @@ describe("certification behavior", () => {
         expect(element.querySelector(".error"), element.textContent ?? "").toBeNull();
         expect(element.querySelector(".markdown-container")?.textContent).toContain("Safe heading");
         expect(element.querySelector("h1")?.textContent).toBe("Safe heading");
+        expect(element.querySelector("table td")?.textContent).toBe("Cell");
         expect(element.querySelector("script, img, form, input, iframe, object, embed")).toBeNull();
-        expect(element.querySelector("[src], [srcset], [poster], [onerror], [onclick]")).toBeNull();
+        expect(element.querySelector(
+            "[background], [src], [srcset], [poster], [dynsrc], [lowsrc], [ping], [onerror], [onclick]"
+        )).toBeNull();
 
         const links = Array.from(element.querySelectorAll("a"));
         const safeLink = links.find((link) => link.textContent === "Safe link");
