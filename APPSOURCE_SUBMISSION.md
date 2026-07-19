@@ -1,5 +1,44 @@
 # AppSource Submission Checklist
 
+## Certification Evidence (2026-07-19)
+
+### Evidence Boundary
+
+- The exact July reviewer rationale is unknown because the private certification report was not available in this session. Do not present any repository finding as the July rejection reason without that report.
+- The July 4 automation record says it uploaded `E:\code\PowerBI\powerbi-markdown-viewer\dist\atlynMarkdownViewer.pbiviz` as version `1.0.1.0` with a context-menu correction.
+- A stale April package in the separate registration folder was discovered later. There is no evidence that Partner Center received that package on July 4.
+
+### Confirmed Source and Package State
+
+- Package implementation commit: `ed7f47f86698b7d2e2734be99a1340c38bdfa315`
+- Artifact: `dist\atlynMarkdownViewer.pbiviz`
+- Display name: `Atlyn Markdown Viewer`
+- Version: `1.0.2.0`
+- GUID: `markdownViewer7897821586924C6F9CD657CB549A6967` (unchanged)
+- Power BI API: `5.11.0`; packaging tools: `7.1.2`
+- The archive contains both context-menu modes and the complete rendering-event lifecycle.
+- The certification audit reports no external requests; application source contains no `innerHTML`, `fetch`, `XMLHttpRequest`, or `eval`.
+- Clean validation: `npm ci`, lint, TypeScript, 8 focused tests, and `npm audit --audit-level=moderate` with zero vulnerabilities.
+- Embedded PBIVIZ metadata/content SHA-256: `66D58C86B163BD2EFE0B0A33D03E1B44765F9902070FCBA43A42208FAE531679`
+- Current archive SHA-256: `0148A88F6677F818F1EF8B49595686F133727C24A85E5F4732CC9086069AFAE1`
+
+`pbiviz package` writes ZIP entry timestamps, so the outer archive SHA-256 changes on each rebuild even when the embedded payload is identical. Recompute and record the outer hash immediately before upload; use the embedded payload hash above to verify source/package content stability.
+
+### Remaining Required or Manual Evidence
+
+- Download the failed submission's certification report when access is available and preserve its exact policy IDs.
+- In Power BI Desktop Developer mode, import `1.0.2.0`, verify incoming filters and both context-menu modes, save/reopen, confirm offline operation, and export a PBIX containing the same visual version. Microsoft requires the PBIX and PBIVIZ versions to match and the sample to work offline.
+- Push the exact source commit to a lowercase `certification` branch before requesting the certified badge.
+- The current single-measure visual does not expose tooltip or outbound cross-filter interactions. Incoming filters should recompute `dataView.single` and require Desktop validation. Document tooltip/outbound-selection cases as not applicable for this visual contract unless the certification report or Desktop test requires a separately approved interaction design.
+
+References:
+
+- [Partner Center Power BI technical configuration](https://learn.microsoft.com/en-us/partner-center/marketplace-offers/power-bi-visual-technical-configuration)
+- [Power BI visual certification requirements](https://learn.microsoft.com/en-us/power-bi/developer/visuals/power-bi-custom-visuals-certified)
+- [Rendering events](https://learn.microsoft.com/en-us/power-bi/developer/visuals/event-service)
+- [Context menus](https://learn.microsoft.com/en-us/power-bi/developer/visuals/context-menu)
+- [Submission testing](https://learn.microsoft.com/en-us/power-bi/developer/visuals/submission-testing)
+
 ## Prerequisites
 - [ ] Microsoft Partner Center account (https://partner.microsoft.com)
 - [ ] Business email verified
