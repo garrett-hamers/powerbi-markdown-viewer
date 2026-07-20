@@ -124,7 +124,9 @@ export class Visual implements IVisual {
             this.eventService.renderingFinished(options);
         } catch (error) {
             const reason = error instanceof Error ? error.message : String(error);
+            this.formattingSettings = new VisualFormattingSettingsModel();
             this.showError(reason);
+            this.applyFormatting();
             this.eventService.renderingFailed(options, reason);
         }
     }
@@ -184,17 +186,65 @@ export class Visual implements IVisual {
             ALLOW_DATA_ATTR: false,
             FORBID_ATTR: ["background"]
         });
-        return this.parseHtmlFragment(sanitizedHtml);
+        const fragment = this.parseHtmlFragment(sanitizedHtml);
+        this.restrictInputClasses(fragment);
+        return fragment;
     }
 
-    private createHighlightedFragment(source: string): DocumentFragment {
-        const highlightedHtml = hljs.highlightAuto(source).value;
+    private createHighlightedFragment(source: string, language?: string): DocumentFragment {
+        const highlightedHtml = language
+            ? hljs.highlight(source, { language, ignoreIllegals: true }).value
+            : hljs.highlightAuto(source).value;
         const sanitizedHtml = DOMPurify.sanitize(highlightedHtml, {
             ALLOWED_TAGS: ["span"],
             ALLOWED_ATTR: ["class"],
             ALLOW_DATA_ATTR: false
         });
-        return this.parseHtmlFragment(sanitizedHtml);
+        const fragment = this.parseHtmlFragment(sanitizedHtml);
+        this.restrictHighlightClasses(fragment);
+        return fragment;
+    }
+
+    private restrictInputClasses(root: ParentNode): void {
+        root.querySelectorAll("[class]").forEach((element) => {
+            const language = element.matches("pre > code")
+                ? this.getValidatedLanguage(element)
+                : undefined;
+
+            element.removeAttribute("class");
+            if (language) {
+                element.classList.add(`language-${language}`);
+            }
+        });
+    }
+
+    private restrictHighlightClasses(root: ParentNode): void {
+        root.querySelectorAll("span[class]").forEach((span) => {
+            const allowedClasses = Array.from(span.classList).filter(
+                (className) => /^hljs-[a-z0-9_-]+$/i.test(className)
+            );
+
+            span.removeAttribute("class");
+            if (allowedClasses.length > 0) {
+                span.classList.add(...allowedClasses);
+            }
+        });
+    }
+
+    private getValidatedLanguage(block: Element): string | undefined {
+        for (const className of Array.from(block.classList)) {
+            const match = /^language-([a-z0-9][a-z0-9_+#.-]{0,63})$/i.exec(className);
+            if (!match) {
+                continue;
+            }
+
+            const language = match[1].toLowerCase();
+            if (hljs.getLanguage(language)) {
+                return language;
+            }
+        }
+
+        return undefined;
     }
 
     private parseHtmlFragment(sanitizedHtml: string): DocumentFragment {
@@ -263,7 +313,11 @@ export class Visual implements IVisual {
 
     private applySyntaxHighlighting(root: ParentNode): void {
         root.querySelectorAll("pre code").forEach((block) => {
-            const fragment = this.createHighlightedFragment(block.textContent ?? "");
+            const language = this.getValidatedLanguage(block);
+            const fragment = this.createHighlightedFragment(
+                block.textContent ?? "",
+                language
+            );
             block.replaceChildren(fragment);
             block.classList.add("hljs");
         });

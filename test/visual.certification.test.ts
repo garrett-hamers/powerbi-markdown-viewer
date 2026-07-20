@@ -1,5 +1,6 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import powerbi from "powerbi-visuals-api";
+import hljs from "highlight.js";
 
 import { Visual } from "../src/visual";
 import { createMockHost, MockHostOptions } from "./helpers/mockHost";
@@ -46,9 +47,17 @@ function createVisual(options: MockHostOptions = {}) {
     return { element, harness, visual };
 }
 
+function createHighlightResult(value: string): ReturnType<typeof hljs.highlight> {
+    return { value } as ReturnType<typeof hljs.highlight>;
+}
+
 describe("certification behavior", () => {
     beforeEach(() => {
         document.body.replaceChildren();
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
     });
 
     it("signals rendering completion for data and empty-data updates", () => {
@@ -75,6 +84,85 @@ describe("certification behavior", () => {
         expect(element.querySelector(".error")?.textContent)
             .toBe("Error: selection builder failed");
         expect(element.querySelector(".error")?.getAttribute("role")).toBe("alert");
+    });
+
+    it("applies high-contrast formatting before signaling a first-render failure", () => {
+        let container: HTMLElement;
+        let formattingAtFailure: Record<string, string> | undefined;
+        const created = createVisual({
+            failSelectionBuilder: true,
+            highContrast: true,
+            onRenderingFailed: () => {
+                formattingAtFailure = {
+                    backgroundColor: container.style.backgroundColor,
+                    color: container.style.color,
+                    fontSize: container.style.fontSize,
+                    padding: container.style.padding
+                };
+            }
+        });
+        container = created.element.querySelector(".markdown-container") as HTMLElement;
+
+        created.visual.update(createUpdateOptions("# Fails on first render"));
+
+        expect(created.harness.eventCalls).toEqual(["started", "failed"]);
+        expect(formattingAtFailure).toEqual({
+            backgroundColor: "rgb(0, 0, 0)",
+            color: "rgb(255, 255, 0)",
+            fontSize: "14px",
+            padding: "20px"
+        });
+        expect(container.classList.contains("high-contrast")).toBe(true);
+        expect(container.querySelector(".error")?.getAttribute("role")).toBe("alert");
+    });
+
+    it("clears stale formatting before signaling a high-contrast failure", () => {
+        let container: HTMLElement;
+        let formattingAtFailure: Record<string, string> | undefined;
+        const created = createVisual({
+            failSelectionBuilderOnCall: 2,
+            highContrast: true,
+            onRenderingFailed: () => {
+                formattingAtFailure = {
+                    backgroundColor: container.style.backgroundColor,
+                    borderStyle: container.style.borderStyle,
+                    color: container.style.color,
+                    fontSize: container.style.fontSize,
+                    padding: container.style.padding
+                };
+            }
+        });
+        container = created.element.querySelector(".markdown-container") as HTMLElement;
+        const staleObjects = {
+            markdown: {
+                fontFamily: "Arial",
+                fontSize: 30,
+                padding: 36,
+                showBorder: true
+            }
+        } as powerbi.DataViewObjects;
+
+        created.visual.update(createUpdateOptions("# Styled success", staleObjects));
+        expect(container.style.fontSize).toBe("30px");
+        expect(container.style.padding).toBe("36px");
+        expect(container.style.borderWidth).toBe("2px");
+
+        created.visual.update(createUpdateOptions("# Default failure"));
+
+        expect(created.harness.eventCalls).toEqual([
+            "started", "finished",
+            "started", "failed"
+        ]);
+        expect(formattingAtFailure).toEqual({
+            backgroundColor: "rgb(0, 0, 0)",
+            borderStyle: "none",
+            color: "rgb(255, 255, 0)",
+            fontSize: "14px",
+            padding: "20px"
+        });
+        expect(container.style.fontFamily).toBe("\"Segoe UI\", sans-serif");
+        expect(container.querySelector(".error")?.textContent)
+            .toBe("Error: selection builder failed");
     });
 
     it("builds a formatting model after an empty-data update", () => {
@@ -257,7 +345,102 @@ describe("certification behavior", () => {
         expect(link?.getAttribute("tabindex")).toBe("0");
     });
 
-    it("highlights code without inserting unsanitized markup", () => {
+    it("strips arbitrary input classes while preserving validated code hints", () => {
+        const { element, visual } = createVisual({ highContrast: true });
+        visual.update(createUpdateOptions([
+            "<p class=\"alert-warning dark-mode error hljs-keyword\">Safe text</p>",
+            "<pre><code class=\"language-javascript alert-warning hljs-string\">const value = 1;</code></pre>"
+        ].join("\n\n")));
+
+        const paragraph = element.querySelector("p");
+        const codeBlock = element.querySelector("pre code");
+        expect(paragraph?.hasAttribute("class")).toBe(false);
+        expect(Array.from(codeBlock?.classList ?? []).sort())
+            .toEqual(["hljs", "language-javascript"]);
+        expect(Array.from(codeBlock?.querySelectorAll("[class]") ?? []).every(
+            (node) => Array.from(node.classList).every(
+                (className) => /^hljs-[a-z0-9_-]+$/i.test(className)
+            )
+        )).toBe(true);
+        expect((element.querySelector(".markdown-container") as HTMLElement)
+            .style.getPropertyValue("--text-color")).toBe("#FFFF00");
+    });
+
+    it("uses validated fenced language hints instead of automatic detection", () => {
+        const explicitHighlight = vi.spyOn(hljs, "highlight").mockReturnValue(
+            createHighlightResult("<span class=\"hljs-keyword\">const</span> answer = 42;")
+        );
+        const automaticHighlight = vi.spyOn(hljs, "highlightAuto").mockReturnValue(
+            createHighlightResult("automatic")
+        );
+        const { element, visual } = createVisual();
+
+        visual.update(createUpdateOptions(
+            "```javascript\nconst answer = 42;\n```"
+        ));
+
+        expect(explicitHighlight).toHaveBeenCalledOnce();
+        expect(explicitHighlight).toHaveBeenCalledWith(
+            "const answer = 42;\n",
+            { language: "javascript", ignoreIllegals: true }
+        );
+        expect(automaticHighlight).not.toHaveBeenCalled();
+        expect(element.querySelector("pre code")?.classList.contains(
+            "language-javascript"
+        )).toBe(true);
+    });
+
+    it("uses automatic detection only for absent or unknown language hints", () => {
+        const explicitHighlight = vi.spyOn(hljs, "highlight").mockReturnValue(
+            createHighlightResult("explicit")
+        );
+        const automaticHighlight = vi.spyOn(hljs, "highlightAuto").mockReturnValue(
+            createHighlightResult("<span class=\"hljs-string\">automatic</span>")
+        );
+        const { element, visual } = createVisual();
+
+        visual.update(createUpdateOptions("```unknown-language\nfirst\n```"));
+        expect(element.querySelector("pre code")?.classList.contains(
+            "language-unknown-language"
+        )).toBe(false);
+
+        visual.update(createUpdateOptions("```\nsecond\n```"));
+
+        expect(explicitHighlight).not.toHaveBeenCalled();
+        expect(automaticHighlight).toHaveBeenNthCalledWith(1, "first\n");
+        expect(automaticHighlight).toHaveBeenNthCalledWith(2, "second\n");
+    });
+
+    it("re-sanitizes hostile syntax-highlighter output to controlled spans", () => {
+        vi.spyOn(hljs, "highlight").mockReturnValue(createHighlightResult([
+            "<span class=\"hljs-keyword alert-warning\" style=\"color:red\" onclick=\"alert(1)\">",
+            "const<img src=\"https://evil.example/track.png\" onerror=\"alert(1)\"></span>",
+            "<a href=\"https://evil.example\">external</a>",
+            "<span class=\"dark-mode\"><script>alert(1)</script>value</span>"
+        ].join("")));
+        const { element, visual } = createVisual();
+
+        visual.update(createUpdateOptions(
+            "```javascript\nconst answer = 42;\n```"
+        ));
+
+        const codeBlock = element.querySelector("pre code");
+        const descendants = Array.from(codeBlock?.querySelectorAll("*") ?? []);
+        expect(descendants.length).toBeGreaterThan(0);
+        expect(descendants.every((node) => node.tagName === "SPAN")).toBe(true);
+        expect(codeBlock?.querySelector(
+            "a, img, script, [style], [onclick], [onerror], [src], [href]"
+        )).toBeNull();
+        expect(codeBlock?.querySelector(".alert-warning, .dark-mode")).toBeNull();
+        expect(codeBlock?.querySelector("span")?.className).toBe("hljs-keyword");
+        expect(Array.from(codeBlock?.querySelectorAll("span[class]") ?? []).every(
+            (span) => Array.from(span.classList).every(
+                (className) => /^hljs-[a-z0-9_-]+$/i.test(className)
+            )
+        )).toBe(true);
+    });
+
+    it("highlights code without rendering executable inline markup", () => {
         const { element, visual } = createVisual();
 
         visual.update(createUpdateOptions(

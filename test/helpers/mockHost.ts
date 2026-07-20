@@ -23,7 +23,9 @@ export interface MockHostHarness {
 
 export interface MockHostOptions {
     failSelectionBuilder?: boolean;
+    failSelectionBuilderOnCall?: number;
     highContrast?: boolean;
+    onRenderingFailed?: () => void;
 }
 
 export function createMockHost(options: MockHostOptions = {}): MockHostHarness {
@@ -32,6 +34,7 @@ export function createMockHost(options: MockHostOptions = {}): MockHostHarness {
     const failureReasons: string[] = [];
     const launchedUrls: string[] = [];
     const measureIds: string[] = [];
+    let selectionIdCreationCount = 0;
 
     const dataPointSelectionId = {
         equals: (other: ISelectionId) => other === dataPointSelectionId,
@@ -59,6 +62,7 @@ export function createMockHost(options: MockHostOptions = {}): MockHostHarness {
         renderingFailed: (_options, reason) => {
             eventCalls.push("failed");
             failureReasons.push(reason ?? "");
+            options.onRenderingFailed?.();
         }
     };
 
@@ -69,7 +73,11 @@ export function createMockHost(options: MockHostOptions = {}): MockHostHarness {
                 return builder;
             },
             createSelectionId: () => {
-                if (options.failSelectionBuilder) {
+                selectionIdCreationCount += 1;
+                if (
+                    options.failSelectionBuilder
+                    || options.failSelectionBuilderOnCall === selectionIdCreationCount
+                ) {
                     throw new Error("selection builder failed");
                 }
                 return dataPointSelectionId;

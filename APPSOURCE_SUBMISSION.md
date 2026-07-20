@@ -18,14 +18,16 @@
 - Power BI API: `5.11.0`; exact packaging tools `7.1.2` are installed from `package-lock.json`.
 - The archive contains both context-menu modes and the complete rendering-event lifecycle.
 - The Markdown sanitizer uses narrow tag/attribute allowlists; regression coverage proves legacy `background` URLs on tables/cells and other automatic resource attributes cannot survive.
-- Syntax highlighting operates on text content, sanitizes the generated spans, and imports them as a `DocumentFragment` rather than assigning application-controlled `innerHTML`.
+- Syntax highlighting honors validated `language-*` hints, falls back to automatic detection only for absent or unknown hints, re-sanitizes generated spans, and imports them as a `DocumentFragment` rather than assigning application-controlled `innerHTML`.
+- User-supplied classes are removed except for validated fenced-code language hints; generated highlighter spans retain only controlled `hljs-*` token classes, so user classes can't activate hardcoded visual styles or bypass high contrast.
 - Validated HTTPS URLs are stored in a controlled `data-safe-href` attribute with no native `href`; anchors retain `role="link"` and keyboard focus, while primary click, middle-click/auxclick, Enter, and Space route through `host.launchUrl`. Unsafe or non-HTTPS links remain inert.
 - The visual declares enhanced keyboard focus and honors the Power BI foreground, background, and hyperlink palette in high-contrast mode.
+- Failed renders reset formatting, render the accessible error state with the current high-contrast palette, and only then signal `renderingFailed`.
 - Empty-data updates initialize a valid formatting model before `getFormattingModel` is called.
 - The certification audit reports no external requests; application source contains no `innerHTML`, `fetch`, `XMLHttpRequest`, or `eval`.
 - All direct and transitive packages resolve from the public npm registry; there are no git, local, private, or submodule dependencies.
-- Clean validation: `npm install`, the required ESLint command, TypeScript, 23 focused tests, `npm audit --audit-level=moderate`, and certification-audit packaging complete with zero vulnerabilities or external requests.
-- Stable embedded PBIVIZ metadata/content SHA-256: `90206A2A49CD42E026BB454A009D858104CFDF5CAE67FDED9643FDB7FC893B13`
+- Clean validation: `npm install`, clean-lock `npm ci`, the required ESLint command, TypeScript, 29 focused tests, `npm audit --audit-level=moderate`, and certification-audit packaging complete with zero vulnerabilities or external requests.
+- Stable embedded PBIVIZ metadata/content SHA-256: `F9B0409F5D1F001BED1B4B89FF42E977EF67B1B8C2E75E8DDEE9EFFD791B2343`
 
 `pbiviz package` writes ZIP entry timestamps, so the outer archive SHA-256 changes on each rebuild even when the embedded payload is identical. Recompute and record the outer hash immediately before upload; use the stable embedded payload hash above to verify source/package content reproducibility.
 
