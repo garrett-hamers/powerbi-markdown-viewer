@@ -74,6 +74,22 @@ describe("certification behavior", () => {
             .toBe("Atlyn Markdown Viewer");
     });
 
+    it("clears the prior measure when the host withholds an invalid multi-measure view", () => {
+        const { element, harness, visual } = createVisual();
+
+        visual.update(createUpdateOptions("# One valid measure"));
+        visual.update(createUpdateOptions());
+
+        expect(element.textContent).not.toContain("One valid measure");
+        expect(element.querySelector(".landing-page h2")?.textContent)
+            .toBe("Atlyn Markdown Viewer");
+        expect(harness.eventCalls).toEqual([
+            "started", "finished",
+            "started", "finished"
+        ]);
+        expect(harness.failureReasons).toEqual([]);
+    });
+
     it("signals rendering failure exactly once and renders a safe error message", () => {
         const { element, harness, visual } = createVisual({ failSelectionBuilder: true });
 

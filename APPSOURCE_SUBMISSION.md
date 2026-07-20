@@ -16,6 +16,7 @@
 - Version: `1.0.3.0`
 - GUID: `markdownViewer7897821586924C6F9CD657CB549A6967` (unchanged)
 - Power BI API: `5.11.0`; exact packaging tools `7.1.2` are installed from `package-lock.json`.
+- The `single` data-view mapping caps `markdownContent` at one field, so the Power BI host prevents a second measure from suppressing the visual's data view.
 - The archive contains both context-menu modes and the complete rendering-event lifecycle.
 - The Markdown sanitizer uses narrow tag/attribute allowlists; regression coverage proves legacy `background` URLs on tables/cells and other automatic resource attributes cannot survive.
 - Syntax highlighting honors validated `language-*` hints, falls back to automatic detection only for absent or unknown hints, re-sanitizes generated spans, and imports them as a `DocumentFragment` rather than assigning application-controlled `innerHTML`.
@@ -26,8 +27,8 @@
 - Empty-data updates initialize a valid formatting model before `getFormattingModel` is called.
 - The certification audit reports no external requests; application source contains no `innerHTML`, `fetch`, `XMLHttpRequest`, or `eval`.
 - All direct and transitive packages resolve from the public npm registry; there are no git, local, private, or submodule dependencies.
-- Clean validation: `npm install`, clean-lock `npm ci`, the required ESLint command, TypeScript, 29 focused tests, `npm audit --audit-level=moderate`, and certification-audit packaging complete with zero vulnerabilities or external requests.
-- Stable embedded PBIVIZ metadata/content SHA-256: `F9B0409F5D1F001BED1B4B89FF42E977EF67B1B8C2E75E8DDEE9EFFD791B2343`
+- Clean validation: `npm install`, clean-lock `npm ci`, the required ESLint command, TypeScript, 31 focused tests, `npm audit --audit-level=moderate`, and certification-audit packaging complete with zero vulnerabilities or external requests.
+- Stable embedded PBIVIZ metadata/content SHA-256: `12A7DDB16EA0918CBFFBEB9140C729D3CB8CD2F1E2261CE931257FBABA37CC1D`
 
 `pbiviz package` writes ZIP entry timestamps, so the outer archive SHA-256 changes on each rebuild even when the embedded payload is identical. Recompute and record the outer hash immediately before upload; use the stable embedded payload hash above to verify source/package content reproducibility.
 

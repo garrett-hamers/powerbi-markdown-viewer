@@ -39,6 +39,13 @@
     },
     "dataViewMappings": [
         {
+            "conditions": [
+                {
+                    "markdownContent": {
+                        "max": 1
+                    }
+                }
+            ],
             "single": {
                 "role": "markdownContent"
             }

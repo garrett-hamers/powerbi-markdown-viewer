@@ -27,6 +27,28 @@ function findFiles(root: string, fileName: string): string[] {
     return matches;
 }
 
+interface RoleLimits {
+    min?: number;
+    max?: number;
+}
+
+interface HostMapping {
+    conditions?: Array<Record<string, RoleLimits>>;
+}
+
+function hostCanCreateDataView(
+    mapping: HostMapping,
+    boundRoleCounts: Record<string, number>
+): boolean {
+    return mapping.conditions?.some((condition) =>
+        Object.entries(condition).every(([role, limits]) => {
+            const count = boundRoleCounts[role] ?? 0;
+            return (limits.min === undefined || count >= limits.min)
+                && (limits.max === undefined || count <= limits.max);
+        })
+    ) ?? true;
+}
+
 describe("certification metadata", () => {
     const pbiviz = readJson("pbiviz.json");
     const packageManifest = readJson("package.json");
@@ -106,11 +128,22 @@ describe("certification metadata", () => {
             kind: "Measure"
         }]);
         expect(capabilities.dataViewMappings).toEqual([{
+            conditions: [{
+                markdownContent: { max: 1 }
+            }],
             single: { role: "markdownContent" }
         }]);
         expect(capabilities.supportsHighlight).toBe(false);
         expect(capabilities.supportsKeyboardFocus).toBe(true);
         expect(capabilities.supportsLandingPage).toBe(true);
+    });
+
+    it("lets the host create a single data view only for zero or one measure", () => {
+        const mapping = capabilities.dataViewMappings[0] as HostMapping;
+
+        expect(hostCanCreateDataView(mapping, { markdownContent: 0 })).toBe(true);
+        expect(hostCanCreateDataView(mapping, { markdownContent: 1 })).toBe(true);
+        expect(hostCanCreateDataView(mapping, { markdownContent: 2 })).toBe(false);
     });
 
     it("uses only public npm registry dependencies", () => {
