@@ -36,6 +36,8 @@ Adjust the visual appearance through the Power BI Format pane:
 | Padding | Inner spacing (px) | 20 |
 | Show Border | Toggle a rounded border | Off |
 
+The visual also honors Power BI's foreground, background, and hyperlink colors in Windows high-contrast mode.
+
 ## Installation
 
 1. Download the `.pbiviz` file from [Releases](../../releases)

@@ -22,6 +22,14 @@ import ISelectionId = powerbi.visuals.ISelectionId;
 
 import { VisualFormattingSettingsModel } from "./settings";
 
+const DEFAULT_ACCENT_COLOR = "#118DFF";
+const DEFAULT_BACKGROUND_COLOR = "#FFFFFF";
+const DEFAULT_BORDER_COLOR = "#E5E7EB";
+const DEFAULT_FONT_FAMILY = "Segoe UI, sans-serif";
+const DEFAULT_FONT_SIZE = 14;
+const DEFAULT_PADDING = 20;
+const DEFAULT_TEXT_COLOR = "#111827";
+
 const emojiMap: { [key: string]: string } = {
     ':smile:': '😄', ':grinning:': '😀', ':laughing:': '😆', ':joy:': '😂',
     ':heart:': '❤️', ':star:': '⭐', ':fire:': '🔥', ':thumbsup:': '👍',
@@ -98,6 +106,7 @@ export class Visual implements IVisual {
         this.container.className = "markdown-container";
         this.container.setAttribute("role", "document");
         this.container.setAttribute("aria-label", "Markdown content");
+        this.container.setAttribute("tabindex", "0");
         this.target.appendChild(this.container);
         this.target.addEventListener("contextmenu", this.contextMenuHandler);
         this.container.addEventListener("click", this.linkClickHandler);
@@ -175,6 +184,20 @@ export class Visual implements IVisual {
             ALLOW_DATA_ATTR: false,
             FORBID_ATTR: ["background"]
         });
+        return this.parseHtmlFragment(sanitizedHtml);
+    }
+
+    private createHighlightedFragment(source: string): DocumentFragment {
+        const highlightedHtml = hljs.highlightAuto(source).value;
+        const sanitizedHtml = DOMPurify.sanitize(highlightedHtml, {
+            ALLOWED_TAGS: ["span"],
+            ALLOWED_ATTR: ["class"],
+            ALLOW_DATA_ATTR: false
+        });
+        return this.parseHtmlFragment(sanitizedHtml);
+    }
+
+    private parseHtmlFragment(sanitizedHtml: string): DocumentFragment {
         const parsedDocument = new DOMParser().parseFromString(sanitizedHtml, "text/html");
         const fragment = document.createDocumentFragment();
 
@@ -240,7 +263,9 @@ export class Visual implements IVisual {
 
     private applySyntaxHighlighting(root: ParentNode): void {
         root.querySelectorAll("pre code").forEach((block) => {
-            hljs.highlightElement(block as HTMLElement);
+            const fragment = this.createHighlightedFragment(block.textContent ?? "");
+            block.replaceChildren(fragment);
+            block.classList.add("hljs");
         });
     }
 
@@ -282,6 +307,7 @@ export class Visual implements IVisual {
 
         const errorContainer = document.createElement("div");
         errorContainer.className = "error";
+        errorContainer.setAttribute("role", "alert");
 
         const label = document.createElement("strong");
         label.textContent = "Error: ";
@@ -290,20 +316,90 @@ export class Visual implements IVisual {
         this.container.appendChild(errorContainer);
     }
 
-    private applyFormatting() {
-        if (!this.formattingSettings?.markdownCard) return;
-        const s = this.formattingSettings.markdownCard;
-        if (s.fontFamily?.value) this.container.style.fontFamily = s.fontFamily.value;
-        if (s.fontSize?.value) this.container.style.fontSize = s.fontSize.value + "px";
-        if (s.fontColor?.value?.value) this.container.style.color = s.fontColor.value.value;
-        if (s.backgroundColor?.value?.value) this.container.style.backgroundColor = s.backgroundColor.value.value;
-        if (s.padding?.value !== undefined) this.container.style.padding = s.padding.value + "px";
-        if (s.showBorder?.value) {
-            this.container.style.border = "1px solid #E5E7EB";
+    private applyFormatting(): void {
+        const settings = this.formattingSettings?.markdownCard;
+        if (!settings) {
+            return;
+        }
+
+        const colorPalette = this.host.colorPalette;
+        const isHighContrast = colorPalette.isHighContrast;
+        const configuredFontFamily = settings.fontFamily?.value?.trim();
+        const configuredFontColor = settings.fontColor?.value?.value || DEFAULT_TEXT_COLOR;
+        const configuredBackgroundColor =
+            settings.backgroundColor?.value?.value || DEFAULT_BACKGROUND_COLOR;
+        const fontColor = isHighContrast
+            ? colorPalette.foreground.value
+            : configuredFontColor;
+        const backgroundColor = isHighContrast
+            ? colorPalette.background.value
+            : configuredBackgroundColor;
+        const accentColor = isHighContrast
+            ? colorPalette.foreground.value
+            : DEFAULT_ACCENT_COLOR;
+        const linkColor = isHighContrast
+            ? colorPalette.hyperlink.value
+            : DEFAULT_ACCENT_COLOR;
+        const borderColor = isHighContrast
+            ? colorPalette.foreground.value
+            : DEFAULT_BORDER_COLOR;
+        const fontSize = this.getSafePixelValue(
+            settings.fontSize?.value,
+            DEFAULT_FONT_SIZE,
+            1
+        );
+        const padding = this.getSafePixelValue(
+            settings.padding?.value,
+            DEFAULT_PADDING,
+            0
+        );
+
+        this.container.classList.toggle("high-contrast", isHighContrast);
+        this.container.style.fontFamily = configuredFontFamily || DEFAULT_FONT_FAMILY;
+        this.container.style.fontSize = `${fontSize}px`;
+        this.container.style.color = fontColor;
+        this.container.style.backgroundColor = backgroundColor;
+        this.container.style.padding = `${padding}px`;
+        this.container.style.setProperty("--accent-color", accentColor);
+        this.container.style.setProperty("--link-color", linkColor);
+        this.container.style.setProperty("--text-color", fontColor);
+        this.container.style.setProperty("--bg-color", backgroundColor);
+        this.container.style.setProperty("--border-color", borderColor);
+        this.container.style.setProperty(
+            "--code-bg",
+            isHighContrast ? backgroundColor : "#F3F4F6"
+        );
+        this.container.style.setProperty(
+            "--pre-bg",
+            isHighContrast ? backgroundColor : "#1F2937"
+        );
+        this.container.style.setProperty(
+            "--pre-text",
+            isHighContrast ? fontColor : "#F9FAFB"
+        );
+        this.container.style.setProperty(
+            "--table-header-bg",
+            isHighContrast ? backgroundColor : "#F8FAFC"
+        );
+        this.container.style.setProperty(
+            "--blockquote-bg",
+            isHighContrast ? backgroundColor : "#F8FAFC"
+        );
+
+        if (settings.showBorder?.value) {
+            const borderWidth = isHighContrast ? 2 : 1;
+            this.container.style.border = `${borderWidth}px solid ${borderColor}`;
             this.container.style.borderRadius = "8px";
         } else {
             this.container.style.border = "none";
+            this.container.style.borderRadius = "0";
         }
+    }
+
+    private getSafePixelValue(value: unknown, fallback: number, minimum: number): number {
+        return typeof value === "number" && Number.isFinite(value)
+            ? Math.max(value, minimum)
+            : fallback;
     }
 
     public getFormattingModel(): powerbi.visuals.FormattingModel {

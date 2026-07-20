@@ -21,7 +21,12 @@ export interface MockHostHarness {
     dataPointSelectionId: ISelectionId;
 }
 
-export function createMockHost(options: { failSelectionBuilder?: boolean } = {}): MockHostHarness {
+export interface MockHostOptions {
+    failSelectionBuilder?: boolean;
+    highContrast?: boolean;
+}
+
+export function createMockHost(options: MockHostOptions = {}): MockHostHarness {
     const contextMenuCalls: ContextMenuCall[] = [];
     const eventCalls: string[] = [];
     const failureReasons: string[] = [];
@@ -75,6 +80,14 @@ export function createMockHost(options: { failSelectionBuilder?: boolean } = {})
     };
 
     const host = {
+        colorPalette: {
+            isHighContrast: options.highContrast ?? false,
+            foreground: { value: "#FFFF00" },
+            foregroundSelected: { value: "#00FF00" },
+            background: { value: "#000000" },
+            hyperlink: { value: "#00FFFF" },
+            getColor: () => ({ value: "#118DFF" })
+        },
         createSelectionManager: () => selectionManager,
         createSelectionIdBuilder,
         eventService,

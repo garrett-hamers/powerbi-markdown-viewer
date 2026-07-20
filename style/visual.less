@@ -1,6 +1,7 @@
 /* CSS Variables for theming */
 .markdown-container {
     --accent-color: #118DFF;
+    --link-color: #118DFF;
     --text-color: #111827;
     --bg-color: #FFFFFF;
     --border-color: #E5E7EB;
@@ -133,11 +134,16 @@
     }
 
     a {
-        color: var(--accent-color);
+        color: var(--link-color);
         text-decoration: none;
 
         &:hover {
             text-decoration: underline;
+        }
+
+        &[role="link"]:focus-visible {
+            outline: 2px solid var(--link-color);
+            outline-offset: 2px;
         }
     }
 
@@ -426,4 +432,27 @@ pre:hover .copy-button {
 
 .error {
     color: #DC2626;
+}
+
+.markdown-container.high-contrast {
+    .error {
+        color: var(--text-color);
+    }
+
+    pre,
+    blockquote,
+    details {
+        border: 2px solid var(--border-color);
+    }
+
+    th,
+    td {
+        border-width: 2px;
+    }
+
+    .hljs,
+    .hljs * {
+        color: var(--text-color) !important;
+        background: var(--bg-color) !important;
+    }
 }

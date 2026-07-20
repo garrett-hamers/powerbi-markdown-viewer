@@ -1,7 +1,7 @@
 {
   "name": "powerbi-markdown-viewer",
   "description": "Render Markdown content with syntax highlighting and emoji support in Power BI reports",
-  "version": "1.0.2.0",
+  "version": "1.0.3.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/garrett-hamers/powerbi-markdown-viewer.git"
@@ -14,7 +14,7 @@
     "pbiviz": "pbiviz",
     "start": "pbiviz start",
     "package": "powershell -NoProfile -Command \"if (Test-Path 'dist') { Get-ChildItem 'dist\\*.pbiviz' -File -ErrorAction SilentlyContinue | Remove-Item -Force }\" && pbiviz package --certification-audit && powershell -NoProfile -Command \"$files = @(Get-ChildItem 'dist\\*.pbiviz' -File); if ($files.Count -ne 1) { throw \\\"Expected exactly one generated .pbiviz file; found $($files.Count)\\\" }; Rename-Item -LiteralPath $files[0].FullName -NewName 'atlynMarkdownViewer.pbiviz' -Force\"",
-    "eslint": "eslint .",
+    "eslint": "npx eslint . --ext .js,.jsx,.ts,.tsx",
     "lint": "npm run eslint",
     "test": "vitest run"
   },

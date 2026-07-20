@@ -2,15 +2,19 @@ import { beforeEach, describe, expect, it } from "vitest";
 import powerbi from "powerbi-visuals-api";
 
 import { Visual } from "../src/visual";
-import { createMockHost } from "./helpers/mockHost";
+import { createMockHost, MockHostOptions } from "./helpers/mockHost";
 
 import DataView = powerbi.DataView;
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
 import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
 
-function createDataView(markdown: string): DataView {
+function createDataView(
+    markdown: powerbi.PrimitiveValue,
+    objects?: powerbi.DataViewObjects
+): DataView {
     return {
         metadata: {
+            objects,
             columns: [{
                 displayName: "Markdown Content",
                 queryName: "Measures.Markdown",
@@ -22,15 +26,18 @@ function createDataView(markdown: string): DataView {
     } as DataView;
 }
 
-function createUpdateOptions(markdown?: string): VisualUpdateOptions {
+function createUpdateOptions(
+    markdown?: powerbi.PrimitiveValue,
+    objects?: powerbi.DataViewObjects
+): VisualUpdateOptions {
     return {
-        dataViews: markdown === undefined ? [] : [createDataView(markdown)],
+        dataViews: markdown === undefined ? [] : [createDataView(markdown, objects)],
         viewport: { width: 640, height: 480 },
         type: 2
     } as VisualUpdateOptions;
 }
 
-function createVisual(options: { failSelectionBuilder?: boolean } = {}) {
+function createVisual(options: MockHostOptions = {}) {
     const element = document.createElement("div");
     document.body.appendChild(element);
     const harness = createMockHost(options);
@@ -67,6 +74,7 @@ describe("certification behavior", () => {
         expect(harness.failureReasons).toEqual(["selection builder failed"]);
         expect(element.querySelector(".error")?.textContent)
             .toBe("Error: selection builder failed");
+        expect(element.querySelector(".error")?.getAttribute("role")).toBe("alert");
     });
 
     it("builds a formatting model after an empty-data update", () => {
@@ -175,6 +183,119 @@ describe("certification behavior", () => {
         expect(unsafeLink.hasAttribute("href")).toBe(false);
         expect(unsafeLink.hasAttribute("data-safe-href")).toBe(false);
         expect(harness.launchedUrls).toHaveLength(4);
+    });
+
+    it("replaces content when incoming filters produce a new single value", () => {
+        const { element, harness, visual } = createVisual();
+
+        visual.update(createUpdateOptions("# Before filter"));
+        visual.update(createUpdateOptions("# After filter"));
+
+        expect(element.querySelector("h1")?.textContent).toBe("After filter");
+        expect(element.textContent).not.toContain("Before filter");
+        expect(harness.eventCalls).toEqual([
+            "started", "finished",
+            "started", "finished"
+        ]);
+    });
+
+    it("applies every declared formatting property and resets toggled borders", () => {
+        const { element, visual } = createVisual();
+        const objects = {
+            markdown: {
+                fontFamily: "Arial",
+                fontSize: 18,
+                fontColor: { solid: { color: "#123456" } },
+                backgroundColor: { solid: { color: "#FEDCBA" } },
+                padding: 12,
+                showBorder: true
+            }
+        } as powerbi.DataViewObjects;
+
+        visual.update(createUpdateOptions("# Styled", objects));
+
+        const container = element.querySelector(".markdown-container") as HTMLElement;
+        expect(container.style.fontFamily).toBe("Arial");
+        expect(container.style.fontSize).toBe("18px");
+        expect(container.style.color).toBe("rgb(18, 52, 86)");
+        expect(container.style.backgroundColor).toBe("rgb(254, 220, 186)");
+        expect(container.style.padding).toBe("12px");
+        expect(container.style.border).toBe("1px solid rgb(229, 231, 235)");
+        expect(container.style.getPropertyValue("--text-color")).toBe("#123456");
+        expect(container.style.getPropertyValue("--bg-color")).toBe("#FEDCBA");
+
+        visual.update(createUpdateOptions("# Defaults"));
+
+        expect(container.style.borderStyle).toBe("none");
+        expect(container.style.borderRadius).toBe("0px");
+    });
+
+    it("uses only Power BI high-contrast colors and exposes keyboard focus", () => {
+        const { element, visual } = createVisual({ highContrast: true });
+        const objects = {
+            markdown: {
+                fontColor: { solid: { color: "#123456" } },
+                backgroundColor: { solid: { color: "#FEDCBA" } },
+                showBorder: true
+            }
+        } as powerbi.DataViewObjects;
+
+        visual.update(createUpdateOptions("[Documentation](https://example.com)", objects));
+
+        const container = element.querySelector(".markdown-container") as HTMLElement;
+        const link = element.querySelector("a[data-safe-href]");
+        expect(container.classList.contains("high-contrast")).toBe(true);
+        expect(container.getAttribute("role")).toBe("document");
+        expect(container.getAttribute("aria-label")).toBe("Markdown content");
+        expect(container.getAttribute("tabindex")).toBe("0");
+        expect(container.style.color).toBe("rgb(255, 255, 0)");
+        expect(container.style.backgroundColor).toBe("rgb(0, 0, 0)");
+        expect(container.style.border).toBe("2px solid rgb(255, 255, 0)");
+        expect(container.style.getPropertyValue("--accent-color")).toBe("#FFFF00");
+        expect(container.style.getPropertyValue("--link-color")).toBe("#00FFFF");
+        expect(link?.getAttribute("role")).toBe("link");
+        expect(link?.getAttribute("tabindex")).toBe("0");
+    });
+
+    it("highlights code without inserting unsanitized markup", () => {
+        const { element, visual } = createVisual();
+
+        visual.update(createUpdateOptions(
+            "```javascript\nconst answer = 42;\n```\n\n`<img src=x onerror=alert(1)>`"
+        ));
+
+        const codeBlock = element.querySelector("pre code");
+        expect(codeBlock?.classList.contains("hljs")).toBe(true);
+        expect(codeBlock?.querySelector("span")).not.toBeNull();
+        expect(codeBlock?.textContent).toContain("const answer = 42;");
+        expect(element.querySelector("img, script")).toBeNull();
+        expect(element.textContent).toContain("<img src=x onerror=alert(1)>");
+    });
+
+    it("handles null and mismatched primitive values without exceptions", () => {
+        const { element, harness, visual } = createVisual();
+
+        for (const value of [0, -1, Infinity, true]) {
+            visual.update(createUpdateOptions(value));
+            expect(element.querySelector(".error")).toBeNull();
+        }
+        visual.update(createUpdateOptions(null));
+
+        expect(element.querySelector(".landing-page")).not.toBeNull();
+        expect(harness.eventCalls).not.toContain("failed");
+    });
+
+    it("keeps multiple visual instances independent", () => {
+        const first = createVisual();
+        const second = createVisual();
+
+        first.visual.update(createUpdateOptions("# First instance"));
+        second.visual.update(createUpdateOptions("# Second instance"));
+
+        expect(first.element.querySelector("h1")?.textContent).toBe("First instance");
+        expect(second.element.querySelector("h1")?.textContent).toBe("Second instance");
+        expect(first.harness.eventCalls).toEqual(["started", "finished"]);
+        expect(second.harness.eventCalls).toEqual(["started", "finished"]);
     });
 
     it("supports data-point and empty-space context-menu modes", () => {
