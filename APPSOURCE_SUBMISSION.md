@@ -13,9 +13,9 @@
 - Source: the exact committed HEAD reported with the final artifact; promote that commit unchanged to the lowercase `certification` branch.
 - Artifact: `dist\atlynMarkdownViewer.pbiviz`
 - Display name: `Atlyn Markdown Viewer`
-- Version: `1.0.3.0`
+- Version: `1.0.4.0`
 - GUID: `markdownViewer7897821586924C6F9CD657CB549A6967` (unchanged)
-- Power BI API package: `5.11.1` (manifest API `5.11.0`); exact packaging tools `7.2.0` are installed from `package-lock.json`.
+- Power BI API package and source manifest: `5.11.1`; exact packaging tools `7.2.0` are installed from `package-lock.json`. Microsoft's API package exports the patch-normalized runtime contract `5.11.0`, which is the API version embedded by `pbiviz package`.
 - The `single` data-view mapping caps `markdownContent` at one field, so the Power BI host prevents a second measure from suppressing the visual's data view.
 - The archive contains both context-menu modes and the complete rendering-event lifecycle.
 - The Markdown sanitizer uses narrow tag/attribute allowlists; regression coverage proves legacy `background` URLs on tables/cells and other automatic resource attributes cannot survive.
@@ -28,15 +28,15 @@
 - The certification audit reports no external requests; application source contains no `innerHTML`, `fetch`, `XMLHttpRequest`, or `eval`.
 - All direct and transitive packages resolve from the public npm registry; there are no git, local, private, or submodule dependencies.
 - The tools `7.2.0` dependency graph overrides `@hono/node-server` to public patched version `2.0.11`, clearing the Windows path-traversal advisory without downgrading Microsoft's latest tools.
-- Clean validation: `npm install`, clean-lock `npm ci`, the required ESLint command, TypeScript, 31 focused tests, `npm audit --audit-level=moderate`, and certification-audit packaging complete with zero vulnerabilities or external requests.
-- Stable embedded PBIVIZ metadata/content SHA-256: `12A7DDB16EA0918CBFFBEB9140C729D3CB8CD2F1E2261CE931257FBABA37CC1D`
+- Clean validation: `npm install`, clean-lock `npm ci`, and `npm run certification:validate` cover the required ESLint command, TypeScript, 31 focused tests, `npm audit --audit-level=moderate`, and certification-audit packaging with zero vulnerabilities or external requests.
+- Stable embedded PBIVIZ metadata/content SHA-256: `E45EF6B43F4093EFD7B35D942C21B6C3F85CA4C74094B787AC0679723FDDADD8`
 
 `pbiviz package` writes ZIP entry timestamps, so the outer archive SHA-256 changes on each rebuild even when the embedded payload is identical. Recompute and record the outer hash immediately before upload; use the stable embedded payload hash above to verify source/package content reproducibility.
 
 ### Remaining Required or Manual Evidence
 
 - Download the failed submission's certification report when access is available and preserve its exact policy IDs.
-- The tracked `sample\SampleReport.pbix` is Microsoft Information Protection/RMS-protected and contains visual version `1.0.0.0`. Do not rewrite this binary with repository automation. Replace it manually in Power BI Desktop with an unprotected PBIX that works offline and contains exact visual version `1.0.3.0`; verify incoming filters, both context-menu modes, safe-link launching, every formatting property, keyboard focus, high contrast, resize/scroll behavior, save/reopen, and publish/export before upload.
+- The tracked `sample\SampleReport.pbix` is Microsoft Information Protection/RMS-protected and contains visual version `1.0.0.0`. Do not rewrite this binary with repository automation. Replace it manually in Power BI Desktop with an unprotected PBIX that works offline and contains exact visual version `1.0.4.0`; verify incoming filters, both context-menu modes, safe-link launching, every formatting property, keyboard focus, high contrast, resize/scroll behavior, save/reopen, and publish/export before upload.
 - Capture at least one real 1366x768 PNG screenshot (maximum 1024 KB) from the validated Power BI Desktop report; do not fabricate submission assets.
 - Push the exact source commit to a lowercase `certification` branch before requesting the certified badge.
 - The current single-measure visual does not expose tooltip or outbound cross-filter interactions. Incoming filters should recompute `dataView.single` and require Desktop validation. Document tooltip/outbound-selection cases as not applicable for this visual contract unless the certification report or Desktop test requires a separately approved interaction design.
@@ -58,7 +58,7 @@ References:
 
 ### Visual Package
 - [x] `.pbiviz` file - Located in `/dist/` folder
-- [x] Version: 1.0.3.0
+- [x] Version: 1.0.4.0
 
 ### Icons & Images
 - [x] 20x20 icon (`/assets/icon.png`) - Used in visual
@@ -73,7 +73,7 @@ References:
 
 ### Sample Report
 - [x] Sample PBIP project (`/sample/SampleReport.pbip`)
-- [ ] Replace the protected stale `sample\SampleReport.pbix` with an unprotected offline PBIX saved using exact visual version 1.0.3.0
+- [ ] Replace the protected stale `sample\SampleReport.pbix` with an unprotected offline PBIX saved using exact visual version 1.0.4.0
 
 ## Submission Steps
 
@@ -92,7 +92,7 @@ References:
 4. **Properties**
    - Categories: Utility, Text
    - Industries: (select applicable)
-   - App version: 1.0.3.0
+   - App version: 1.0.4.0
 
 5. **Offer Listing**
    - Name: Atlyn Markdown Viewer

@@ -57,15 +57,14 @@ describe("certification metadata", () => {
 
     it("keeps canonical name, version, API, and GUID aligned", () => {
         expect(pbiviz.visual.displayName).toBe("Atlyn Markdown Viewer");
-        expect(pbiviz.visual.version).toBe("1.0.3.0");
+        expect(pbiviz.visual.version).toBe("1.0.4.0");
         expect(packageManifest.version).toBe(pbiviz.visual.version);
         expect(packageLock.version).toBe(pbiviz.visual.version);
         expect(packageLock.packages[""].version).toBe(pbiviz.visual.version);
-        expect(pbiviz.apiVersion).toBe("5.11.0");
+        expect(pbiviz.apiVersion).toBe("5.11.1");
         expect(packageManifest.dependencies["powerbi-visuals-api"]).toBe("5.11.1");
-        const [apiMajor, apiMinor] =
-            packageManifest.dependencies["powerbi-visuals-api"].split(".");
-        expect(pbiviz.apiVersion).toBe(`${apiMajor}.${apiMinor}.0`);
+        expect(pbiviz.apiVersion)
+            .toBe(packageManifest.dependencies["powerbi-visuals-api"]);
         expect(pbiviz.visual.guid)
             .toBe("markdownViewer7897821586924C6F9CD657CB549A6967");
     });
@@ -91,6 +90,10 @@ describe("certification metadata", () => {
         expect(packageManifest.scripts.package).toContain("package --certification-audit");
         expect(packageManifest.scripts.package).toContain("atlynMarkdownViewer.pbiviz");
         expect(packageManifest.scripts.package).toContain("Expected exactly one generated .pbiviz file");
+        expect(packageManifest.scripts["certification:validate"])
+            .toContain("npm audit --audit-level=moderate");
+        expect(packageManifest.scripts["certification:validate"])
+            .toContain("npm run package");
     });
 
     it("uses the locked local Power BI toolchain", () => {
