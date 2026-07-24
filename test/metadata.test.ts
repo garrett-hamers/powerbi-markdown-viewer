@@ -62,6 +62,10 @@ describe("certification metadata", () => {
         expect(packageLock.version).toBe(pbiviz.visual.version);
         expect(packageLock.packages[""].version).toBe(pbiviz.visual.version);
         expect(pbiviz.apiVersion).toBe("5.11.0");
+        expect(packageManifest.dependencies["powerbi-visuals-api"]).toBe("5.11.1");
+        const [apiMajor, apiMinor] =
+            packageManifest.dependencies["powerbi-visuals-api"].split(".");
+        expect(pbiviz.apiVersion).toBe(`${apiMajor}.${apiMinor}.0`);
         expect(pbiviz.visual.guid)
             .toBe("markdownViewer7897821586924C6F9CD657CB549A6967");
     });
@@ -90,12 +94,15 @@ describe("certification metadata", () => {
     });
 
     it("uses the locked local Power BI toolchain", () => {
-        expect(packageManifest.dependencies["powerbi-visuals-api"]).toBe("5.11.0");
-        expect(packageManifest.devDependencies["powerbi-visuals-tools"]).toBe("7.1.2");
-        expect(packageLock.packages["node_modules/powerbi-visuals-api"].version).toBe("5.11.0");
-        expect(packageLock.packages["node_modules/powerbi-visuals-tools"].version).toBe("7.1.2");
+        expect(packageManifest.dependencies["powerbi-visuals-api"]).toBe("5.11.1");
+        expect(packageManifest.devDependencies["powerbi-visuals-tools"]).toBe("7.2.0");
+        expect(packageLock.packages["node_modules/powerbi-visuals-api"].version).toBe("5.11.1");
+        expect(packageLock.packages["node_modules/powerbi-visuals-tools"].version).toBe("7.2.0");
         expect(packageManifest.scripts.package).not.toContain("npx");
         expect(packageManifest.overrides.sockjs.uuid).toBe("11.1.1");
+        expect(packageManifest.overrides["@hono/node-server"]).toBe("2.0.11");
+        expect(packageLock.packages["node_modules/@hono/node-server"].version)
+            .toBe("2.0.11");
     });
 
     it("uses Microsoft's required ESLint script and recommended configuration", () => {

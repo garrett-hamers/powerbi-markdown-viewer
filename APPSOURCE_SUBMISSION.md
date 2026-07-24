@@ -1,6 +1,6 @@
 # AppSource Submission Checklist
 
-## Certification Evidence (2026-07-19)
+## Certification Evidence (2026-07-24)
 
 ### Evidence Boundary
 
@@ -15,7 +15,7 @@
 - Display name: `Atlyn Markdown Viewer`
 - Version: `1.0.3.0`
 - GUID: `markdownViewer7897821586924C6F9CD657CB549A6967` (unchanged)
-- Power BI API: `5.11.0`; exact packaging tools `7.1.2` are installed from `package-lock.json`.
+- Power BI API package: `5.11.1` (manifest API `5.11.0`); exact packaging tools `7.2.0` are installed from `package-lock.json`.
 - The `single` data-view mapping caps `markdownContent` at one field, so the Power BI host prevents a second measure from suppressing the visual's data view.
 - The archive contains both context-menu modes and the complete rendering-event lifecycle.
 - The Markdown sanitizer uses narrow tag/attribute allowlists; regression coverage proves legacy `background` URLs on tables/cells and other automatic resource attributes cannot survive.
@@ -27,6 +27,7 @@
 - Empty-data updates initialize a valid formatting model before `getFormattingModel` is called.
 - The certification audit reports no external requests; application source contains no `innerHTML`, `fetch`, `XMLHttpRequest`, or `eval`.
 - All direct and transitive packages resolve from the public npm registry; there are no git, local, private, or submodule dependencies.
+- The tools `7.2.0` dependency graph overrides `@hono/node-server` to public patched version `2.0.11`, clearing the Windows path-traversal advisory without downgrading Microsoft's latest tools.
 - Clean validation: `npm install`, clean-lock `npm ci`, the required ESLint command, TypeScript, 31 focused tests, `npm audit --audit-level=moderate`, and certification-audit packaging complete with zero vulnerabilities or external requests.
 - Stable embedded PBIVIZ metadata/content SHA-256: `12A7DDB16EA0918CBFFBEB9140C729D3CB8CD2F1E2261CE931257FBABA37CC1D`
 

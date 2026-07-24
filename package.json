@@ -22,7 +22,7 @@
     "dompurify": "3.4.12",
     "highlight.js": "^11.11.1",
     "marked": "^4.3.0",
-    "powerbi-visuals-api": "5.11.0",
+    "powerbi-visuals-api": "5.11.1",
     "powerbi-visuals-utils-formattingmodel": "7.1.0"
   },
   "devDependencies": {
@@ -32,7 +32,7 @@
     "eslint-plugin-powerbi-visuals": "1.1.1",
     "jsdom": "^29.1.1",
     "less": "4.6.4",
-    "powerbi-visuals-tools": "7.1.2",
+    "powerbi-visuals-tools": "7.2.0",
     "ts-loader": "^9.5.4",
     "typescript": "5.9.3",
     "vitest": "4.1.10"
@@ -40,7 +40,8 @@
   "overrides": {
     "sockjs": {
       "uuid": "11.1.1"
-    }
+    },
+    "@hono/node-server": "2.0.11"
   },
   "bugs": {
     "url": "https://github.com/garrett-hamers/powerbi-markdown-viewer/issues"
