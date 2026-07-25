@@ -4,3 +4,6 @@ dist/
 *.pbiviz
 .DS_Store
 webpack.statistics.*.html
+
+# Playwright MCP scratch output: console logs, page snapshots, screenshots
+.playwright-mcp/
