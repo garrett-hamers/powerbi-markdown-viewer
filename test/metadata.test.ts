@@ -57,7 +57,7 @@ describe("certification metadata", () => {
 
     it("keeps canonical name, version, API, and GUID aligned", () => {
         expect(pbiviz.visual.displayName).toBe("Atlyn Markdown Viewer");
-        expect(pbiviz.visual.version).toBe("1.0.4.0");
+        expect(pbiviz.visual.version).toBe("1.0.5.0");
         expect(packageManifest.version).toBe(pbiviz.visual.version);
         expect(packageLock.version).toBe(pbiviz.visual.version);
         expect(packageLock.packages[""].version).toBe(pbiviz.visual.version);
@@ -106,6 +106,9 @@ describe("certification metadata", () => {
         expect(packageManifest.overrides["@hono/node-server"]).toBe("2.0.11");
         expect(packageLock.packages["node_modules/@hono/node-server"].version)
             .toBe("2.0.11");
+        expect(packageManifest.overrides["brace-expansion"]).toBe("5.0.8");
+        expect(packageLock.packages["node_modules/brace-expansion"].version)
+            .toBe("5.0.8");
     });
 
     it("uses Microsoft's required ESLint script and recommended configuration", () => {
