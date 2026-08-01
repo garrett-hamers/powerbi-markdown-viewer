@@ -96,6 +96,7 @@ export interface TableBlock extends BlockBase {
     type: "table";
     headers: InlineNode[][];
     rows: InlineNode[][][];
+    alignments: Array<"left" | "center" | "right" | undefined>;
     caption: string;
 }
 
@@ -609,11 +610,23 @@ function buildBlockParser(
                 const captionElement = element.querySelector("caption");
                 const caption = captionElement?.textContent?.trim()
                     || (headers.length > 0 ? textFromInline(headers[0]) : "Document table");
+                const alignments = (headerRow
+                    ? Array.from(headerRow.children)
+                    : bodyRows[0]
+                        ? Array.from(bodyRows[0].children)
+                        : []
+                ).map((cell) => {
+                    const value = cell.getAttribute("align")?.toLowerCase();
+                    return value === "left" || value === "center" || value === "right"
+                        ? value
+                        : undefined;
+                });
                 blocks.push({
                     ...base,
                     type: "table",
                     headers,
                     rows,
+                    alignments,
                     caption
                 });
                 stats.tableCount += 1;
@@ -862,7 +875,7 @@ export function createStructuredDocumentModel(
     if (limitedRows.some((row, index) => row.order === undefined || (index > 0 && row.order === limitedRows[index - 1].order))) {
         addDiagnostic(diagnostics, "source-order");
     }
-    const rowModels = limitedRows.map((row) => {
+    const rowSources = limitedRows.map((row) => {
         const title = row.title.trim() || `Section ${row.index + 1}`;
         const value = row.value ? `\n\n**Value:** ${row.value}` : "";
         const status = row.status !== "unknown"
@@ -871,8 +884,62 @@ export function createStructuredDocumentModel(
         const link = row.link ? `\n\n[Open related HTTPS link](${row.link})` : "";
         return `## ${title}\n\n${row.body}${value}${status}${link}`;
     });
-    const source = rowModels.join("\n\n");
+    const source = rowSources.join("\n\n");
     const model = buildModel(source, "structured", emojiMap);
+    const rowModels: DocumentModel[] = [];
+    const blocks: DocumentBlock[] = [];
+    let logicalBlockCount = 0;
+    let estimatedNodes = 0;
+    let codeBlockCount = 0;
+    let budgetExhausted = false;
+    if (source.length <= DOCUMENT_LIMITS.maxSourceCharacters) {
+        rowSources.forEach((rowSource, rowPosition) => {
+            if (
+                logicalBlockCount >= DOCUMENT_LIMITS.maxBlocks
+                || estimatedNodes >= DOCUMENT_LIMITS.maxEstimatedNodes
+                || codeBlockCount >= DOCUMENT_LIMITS.maxCodeBlocks
+            ) {
+                budgetExhausted = true;
+                return;
+            }
+            const row = limitedRows[rowPosition];
+            const rowModel = buildModel(
+                rowSource,
+                "structured",
+                emojiMap,
+                row.index,
+                row.selectionKey
+            );
+            prefixBlockIdentity(
+                rowModel.blocks,
+                `row-${row.index}-${hashText(row.selectionKey ?? row.sectionKey)}`
+            );
+            for (const block of rowModel.blocks) {
+                const blockNodes = estimateBlockNodes(block);
+                if (
+                    blocks.length + countLogicalBlocks(block) > DOCUMENT_LIMITS.maxBlocks
+                    || estimatedNodes + blockNodes > DOCUMENT_LIMITS.maxEstimatedNodes
+                    || codeBlockCount + countCodeBlocks(block)
+                        > DOCUMENT_LIMITS.maxCodeBlocks
+                ) {
+                    budgetExhausted = true;
+                    break;
+                }
+                blocks.push(block);
+                logicalBlockCount += countLogicalBlocks(block);
+                estimatedNodes += blockNodes;
+                codeBlockCount += countCodeBlocks(block);
+            }
+            rowModels.push(rowModel);
+        });
+    }
+    if (budgetExhausted) {
+        addDiagnostic(diagnostics, "block-limit");
+    }
+    const headingCursor = { index: 0 };
+    rowModels.forEach((rowModel) => {
+        applyOutlineAnchors(rowModel.blocks, model.outline, headingCursor);
+    });
     const mergedDiagnostics = [
         ...model.diagnostics,
         ...createDiagnostics(diagnostics)
@@ -887,19 +954,11 @@ export function createStructuredDocumentModel(
     });
     const diagnosticsList = Array.from(uniqueDiagnostics.values());
     const completeness: DocumentCompleteness = diagnosticsList.length > 0 ? "partial" : "complete";
-    let rowPosition = -1;
-    model.blocks.forEach((block) => {
-        if (block.type === "heading") {
-            rowPosition += 1;
-        }
-        const row = limitedRows[rowPosition];
-        if (row && rowPosition >= 0) {
-            block.sourceRowIndex = row.index;
-            block.selectionKey = row.selectionKey;
-        }
-    });
     return {
         ...model,
+        blocks,
+        searchIndex: collectSearchEntries(blocks),
+        stats: aggregateStats(blocks),
         diagnostics: diagnosticsList,
         completeness,
         source: {
@@ -908,10 +967,189 @@ export function createStructuredDocumentModel(
             totalRows
         },
         summary: createSummary(model.title, {
-            ...model.stats,
+            ...aggregateStats(blocks),
             rowCount: limitedRows.length
         }, completeness, diagnosticsList)
     };
+}
+
+function applyOutlineAnchors(
+    blocks: DocumentBlock[],
+    outline: OutlineEntry[],
+    cursor: { index: number }
+): void {
+    blocks.forEach((block) => {
+        if (block.type === "heading") {
+            block.anchorId = outline[cursor.index]?.id ?? block.anchorId;
+            cursor.index += 1;
+        }
+
+        if (block.type === "quote" || block.type === "disclosure") {
+            applyOutlineAnchors(block.children, outline, cursor);
+        } else if (block.type === "list") {
+            block.items.forEach((item) => {
+                item.nested?.forEach((nested) => applyOutlineAnchors([nested], outline, cursor));
+            });
+        }
+    });
+}
+
+function prefixBlockIdentity(blocks: DocumentBlock[], prefix: string): void {
+    blocks.forEach((block) => {
+        block.key = `${prefix}-${block.key}`;
+        if (block.type === "quote" || block.type === "disclosure") {
+            prefixBlockIdentity(block.children, prefix);
+        } else if (block.type === "list") {
+            block.items.forEach((item) => {
+                item.key = `${prefix}-${item.key}`;
+                item.nested?.forEach((nested) => prefixBlockIdentity([nested], prefix));
+            });
+        }
+    });
+}
+
+function estimateBlockNodes(block: DocumentBlock): number {
+    let total = 1 + inlineNodeCount(block);
+    if (block.type === "quote" || block.type === "disclosure") {
+        block.children.forEach((child) => {
+            total += estimateBlockNodes(child);
+        });
+    } else if (block.type === "list") {
+        block.items.forEach((item) => {
+            total += 1;
+            item.nested?.forEach((nested) => {
+                total += estimateBlockNodes(nested);
+            });
+        });
+    } else if (block.type === "table") {
+        total += block.headers.length + block.rows.length;
+    }
+    return total;
+}
+
+function countLogicalBlocks(block: DocumentBlock): number {
+    let total = 1;
+    if (block.type === "quote" || block.type === "disclosure") {
+        block.children.forEach((child) => {
+            total += countLogicalBlocks(child);
+        });
+    } else if (block.type === "list") {
+        itemNestedBlocks(block).forEach((nested) => {
+            total += countLogicalBlocks(nested);
+        });
+    }
+    return total;
+}
+
+function itemNestedBlocks(block: Extract<DocumentBlock, { type: "list" }>): ListBlock[] {
+    return block.items.flatMap((item) => item.nested ?? []);
+}
+
+function inlineNodeCount(block: DocumentBlock): number {
+    const count = (nodes: InlineNode[]): number => nodes.reduce((total, node) => {
+        if ("children" in node) {
+            return total + 1 + count(node.children);
+        }
+        return total + 1;
+    }, 0);
+    if (
+        block.type === "heading"
+        || block.type === "paragraph"
+        || block.type === "status"
+    ) {
+        return count(block.children);
+    }
+    if (block.type === "list") {
+        return block.items.reduce((total, item) => total + count(item.children), 0);
+    }
+    if (block.type === "table") {
+        return [
+            ...block.headers,
+            ...block.rows.flat()
+        ].reduce((total, cell) => total + count(cell), 0);
+    }
+    return 0;
+}
+
+function aggregateStats(blocks: DocumentBlock[]): DocumentStats {
+    return blocks.reduce((stats, block) => {
+        const blockStats = statsForBlock(block);
+        return {
+            blockCount: stats.blockCount + blockStats.blockCount,
+            headingCount: stats.headingCount + blockStats.headingCount,
+            tableCount: stats.tableCount + blockStats.tableCount,
+            linkCount: stats.linkCount + blockStats.linkCount,
+            codeBlockCount: stats.codeBlockCount + blockStats.codeBlockCount,
+            rowCount: stats.rowCount + blockStats.rowCount
+        };
+    }, {
+        blockCount: 0,
+        headingCount: 0,
+        tableCount: 0,
+        linkCount: 0,
+        codeBlockCount: 0,
+        rowCount: 0
+    });
+}
+
+function countCodeBlocks(block: DocumentBlock): number {
+    return statsForBlock(block).codeBlockCount;
+}
+
+function statsForBlock(block: DocumentBlock): DocumentStats {
+    const stats: DocumentStats = {
+        blockCount: 1,
+        headingCount: block.type === "heading" ? 1 : 0,
+        tableCount: block.type === "table" ? 1 : 0,
+        linkCount: countDirectLinks(block),
+        codeBlockCount: block.type === "code" ? 1 : 0,
+        rowCount: block.type === "table" ? block.rows.length : 0
+    };
+    nestedBlocks(block).forEach((child) => {
+        const childStats = statsForBlock(child);
+        stats.blockCount += childStats.blockCount;
+        stats.headingCount += childStats.headingCount;
+        stats.tableCount += childStats.tableCount;
+        stats.linkCount += childStats.linkCount;
+        stats.codeBlockCount += childStats.codeBlockCount;
+        stats.rowCount += childStats.rowCount;
+    });
+    return stats;
+}
+
+function nestedBlocks(block: DocumentBlock): DocumentBlock[] {
+    if (block.type === "quote" || block.type === "disclosure") {
+        return block.children;
+    }
+    if (block.type === "list") {
+        return block.items.flatMap((item) => item.nested ?? []);
+    }
+    return [];
+}
+
+function countDirectLinks(block: DocumentBlock): number {
+    const countInline = (nodes: InlineNode[]): number => nodes.reduce((count, node) => {
+        if (node.type === "link") {
+            return count + 1;
+        }
+        return "children" in node ? count + countInline(node.children) : count;
+    }, 0);
+    switch (block.type) {
+        case "heading":
+        case "paragraph":
+        case "status":
+            return countInline(block.children);
+        case "list":
+            return block.items.reduce(
+                (count, item) => count + countInline(item.children),
+                0
+            );
+        case "table":
+            return [...block.headers, ...block.rows.flat()]
+                .reduce((count, cell) => count + countInline(cell), 0);
+        default:
+            return 0;
+    }
 }
 
 export function findSearchMatches(model: DocumentModel, query: string): SearchMatch[] {

@@ -36,6 +36,7 @@ import {
     createDocumentModel,
     createEmptyDocumentModel,
     createStructuredDocumentModel,
+    DOCUMENT_LIMITS,
     DocumentBlock,
     DocumentModel,
     findSearchMatches,
@@ -113,6 +114,7 @@ export class Visual implements IVisual {
     private readonly emptySelectionId = {} as ISelectionId;
     private readonly documentCache = new Map<string, DocumentModel>();
     private readonly rowSelectionIds = new Map<string, ISelectionId>();
+    private structuredRowTotal?: number;
     private renderedKind: "none" | "landing" | "document" | "error" = "none";
     private renderedMarkdown?: string;
     private renderedModel?: DocumentModel;
@@ -237,8 +239,8 @@ export class Visual implements IVisual {
             coordinates: [event.clientX, event.clientY],
             isTouchEvent: false,
             dataItems: [{
-                displayName: "Section",
-                value: row.getAttribute("aria-label") ?? ""
+                displayName: row.dataset.tooltip ? "Tooltip" : "Section",
+                value: row.dataset.tooltip || row.getAttribute("aria-label") || ""
             }],
             identities: [selectionId]
         });
@@ -318,6 +320,7 @@ export class Visual implements IVisual {
         const dataView = options.dataViews?.[0];
         this.currentSelectionId = undefined;
         this.rowSelectionIds.clear();
+        this.structuredRowTotal = undefined;
 
         if (dataView) {
             this.formattingSettings = this.formattingSettingsService.populateFormattingSettingsModel(
@@ -402,7 +405,28 @@ export class Visual implements IVisual {
         const valueIndex = indexFor("sectionValue");
         const linkIndex = indexFor("sectionLink");
         const tooltipIndex = indexFor("tooltip");
-        const structuredRows = rows.map((row, index) => {
+        this.structuredRowTotal = rows.length;
+        const sourceRows = rows.slice(0, DOCUMENT_LIMITS.maxStructuredRows);
+        const candidates = sourceRows.map((row, index) => ({
+            row,
+            index,
+            sectionKey: this.getRawText(row[sectionIndex]) || `row-${index + 1}`,
+            order: this.getOrder(orderIndex < 0 ? undefined : row[orderIndex])
+        }));
+        candidates.sort((left, right) => {
+            if (left.order !== undefined && right.order !== undefined && left.order !== right.order) {
+                return left.order - right.order;
+            }
+            if (left.order === undefined && right.order !== undefined) {
+                return 1;
+            }
+            if (left.order !== undefined && right.order === undefined) {
+                return -1;
+            }
+            return left.sectionKey.localeCompare(right.sectionKey) || left.index - right.index;
+        });
+        const selectedCandidates = candidates.slice(0, DOCUMENT_LIMITS.maxLiveStructuredRows);
+        const createStructuredRow = ({ row, index }: typeof candidates[number]) => {
             const read = (columnIndex: number): PrimitiveValue | undefined =>
                 columnIndex < 0 ? undefined : row[columnIndex];
             const text = (columnIndex: number): string => this.formatValue(read(columnIndex));
@@ -427,21 +451,15 @@ export class Visual implements IVisual {
                 tooltip: tooltipIndex >= 0 ? text(tooltipIndex) : undefined,
                 selectionId
             };
-        });
-        structuredRows.sort((left, right) => {
-            const leftOrder = left.order;
-            const rightOrder = right.order;
-            if (leftOrder !== undefined && rightOrder !== undefined && leftOrder !== rightOrder) {
-                return leftOrder - rightOrder;
-            }
-            if (leftOrder === undefined && rightOrder !== undefined) {
-                return 1;
-            }
-            if (leftOrder !== undefined && rightOrder === undefined) {
-                return -1;
-            }
-            return left.sectionKey.localeCompare(right.sectionKey) || left.index - right.index;
-        });
+        };
+        const rowsByIndex = new Map<number, ReturnType<typeof createStructuredRow>>();
+        selectedCandidates
+            .slice()
+            .sort((left, right) => left.index - right.index)
+            .forEach((candidate) => {
+                rowsByIndex.set(candidate.index, createStructuredRow(candidate));
+            });
+        const structuredRows = selectedCandidates.map((candidate) => rowsByIndex.get(candidate.index)!);
         structuredRows.forEach((row) => {
             if (row.selectionId) {
                 this.rowSelectionIds.set(row.selectionKey ?? "", row.selectionId);
@@ -479,11 +497,15 @@ export class Visual implements IVisual {
         return String(value);
     }
 
+    private getRawText(value: PrimitiveValue | undefined): string {
+        return value === null || value === undefined ? "" : String(value);
+    }
+
     private renderStructuredDocument(
         _dataView: DataView,
         rows: StructuredDocumentRow[]
     ): void {
-        const totalRows = rows.length;
+        const totalRows = this.structuredRowTotal ?? rows.length;
         const model = createStructuredDocumentModel(rows, emojiMap, totalRows);
         this.renderedMarkdown = undefined;
         this.renderedModel = model;
@@ -713,23 +735,27 @@ export class Visual implements IVisual {
         wrapper.setAttribute("role", "article");
         wrapper.setAttribute("aria-label", row.title || `Section ${row.index + 1}`);
         if (row.tooltip) {
+            wrapper.dataset.tooltip = row.tooltip;
             wrapper.title = row.tooltip;
         }
         return wrapper;
     }
 
     private removeRowInteraction(element: HTMLElement): void {
-        element.classList.remove(
-            "structured-row",
-            "structured-paragraph",
-            "structured-callout",
-            "structured-metric",
-            "structured-table-row"
-        );
-        element.removeAttribute("data-selection-key");
-        element.removeAttribute("tabindex");
-        element.removeAttribute("role");
-        element.removeAttribute("title");
+        [element, ...Array.from(element.querySelectorAll<HTMLElement>("[data-selection-key]"))]
+            .forEach((candidate) => {
+                candidate.classList.remove(
+                    "structured-row",
+                    "structured-paragraph",
+                    "structured-callout",
+                    "structured-metric",
+                    "structured-table-row"
+                );
+                candidate.removeAttribute("data-selection-key");
+                candidate.removeAttribute("tabindex");
+                candidate.removeAttribute("role");
+                candidate.removeAttribute("title");
+            });
     }
 
     private renderBlock(
@@ -813,9 +839,13 @@ export class Visual implements IVisual {
                 element.appendChild(caption);
                 const thead = document.createElement("thead");
                 const headerRow = document.createElement("tr");
-                block.headers.forEach((header) => {
+                block.headers.forEach((header, cellIndex) => {
                     const th = document.createElement("th");
                     th.setAttribute("scope", "col");
+                    const alignment = block.alignments[cellIndex];
+                    if (alignment) {
+                        th.setAttribute("align", alignment);
+                    }
                     this.appendInline(th, header, block.key);
                     headerRow.appendChild(th);
                 });
@@ -827,8 +857,12 @@ export class Visual implements IVisual {
                 block.rows.forEach((row, rowIndex) => {
                     const tr = document.createElement("tr");
                     tr.setAttribute("data-block-key", `${block.key}-row-${rowIndex}`);
-                    row.forEach((cell) => {
+                    row.forEach((cell, cellIndex) => {
                         const td = document.createElement("td");
+                        const alignment = block.alignments[cellIndex];
+                        if (alignment) {
+                            td.setAttribute("align", alignment);
+                        }
                         this.appendInline(td, cell, `${block.key}-row-${rowIndex}`);
                         tr.appendChild(td);
                     });
@@ -1084,14 +1118,23 @@ export class Visual implements IVisual {
         if (typeof manager.select === "function") {
             void manager.select(selectionId, multiSelect);
         }
-        this.container.querySelectorAll("[data-selection-key]").forEach((candidate) => {
-            candidate.classList.toggle("selected", candidate === row);
-            if (candidate === row) {
-                candidate.setAttribute("aria-selected", "true");
-            } else {
-                candidate.removeAttribute("aria-selected");
-            }
-        });
+        if (!multiSelect) {
+            this.container.querySelectorAll("[data-selection-key]").forEach((candidate) => {
+                candidate.classList.toggle("selected", candidate === row);
+                if (candidate === row) {
+                    candidate.setAttribute("aria-selected", "true");
+                } else {
+                    candidate.removeAttribute("aria-selected");
+                }
+            });
+            return;
+        }
+        const selected = row.classList.toggle("selected");
+        if (selected) {
+            row.setAttribute("aria-selected", "true");
+        } else {
+            row.removeAttribute("aria-selected");
+        }
     }
 
     private refreshSearchPresentation(restoreFocus = true): void {

@@ -131,6 +131,19 @@ describe("semantic document model", () => {
         expect(model.diagnostics.some((item) => item.category === "auto-detect-limit")).toBe(false);
     });
 
+    it("preserves Markdown table alignment through the safe model", () => {
+        const model = createDocumentModel(
+            "| Left | Center | Right |\n| :--- | :---: | ---: |\n| a | b | c |",
+            emojiMap
+        );
+        const table = model.blocks.find((block) => block.type === "table");
+
+        expect(table?.type).toBe("table");
+        expect(table && table.type === "table" ? table.alignments : []).toEqual([
+            "left", "center", "right"
+        ]);
+    });
+
     it("reports bounded structured rows and preserves explicit status text", () => {
         const rows = Array.from({ length: DOCUMENT_LIMITS.maxLiveStructuredRows + 1 }, (_, index) => ({
             index,
@@ -149,5 +162,31 @@ describe("semantic document model", () => {
         expect(model.completeness).toBe("partial");
         expect(model.diagnostics.some((diagnostic) => diagnostic.category === "row-limit")).toBe(true);
         expect(model.blocks.some((block) => block.type === "status")).toBe(true);
+    });
+
+    it("preserves row provenance across every generated structured block", () => {
+        const model = createStructuredDocumentModel([{
+            index: 7,
+            sectionKey: "section-7",
+            title: "Section 7",
+            body: "Body text\n\n> quote",
+            kind: "paragraph",
+            status: "warning",
+            value: "42",
+            link: "https://example.com",
+            selectionKey: "selection-7"
+        }], emojiMap, 1);
+
+        expect(model.blocks.length).toBeGreaterThan(2);
+        expect(model.blocks.every((block) =>
+            block.sourceRowIndex === 7 && block.selectionKey === "selection-7"
+        )).toBe(true);
+        const quote = model.blocks.find((block) => block.type === "quote");
+        expect(quote?.type).toBe("quote");
+        expect(quote && quote.type === "quote"
+            ? quote.children.every((child) =>
+                child.sourceRowIndex === 7 && child.selectionKey === "selection-7"
+            )
+            : false).toBe(true);
     });
 });

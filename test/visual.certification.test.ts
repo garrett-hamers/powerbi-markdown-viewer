@@ -27,7 +27,7 @@ function createDataView(
     } as DataView;
 }
 
-function createStructuredDataView(): DataView {
+function createStructuredDataView(rowCount = 2): DataView {
     const columns = [
         { displayName: "Section", queryName: "Sections.Key", roles: { section: true }, type: { text: true } },
         { displayName: "Order", queryName: "Sections.Order", roles: { sectionOrder: true }, type: { numeric: true } },
@@ -40,10 +40,14 @@ function createStructuredDataView(): DataView {
         metadata: { columns },
         table: {
             columns,
-            rows: [
-                ["second", 2, "Second section", "Second body", "unknown", "Second details"],
-                ["first", 1, "First section", "First body", "warning", "First details"]
-            ]
+            rows: rowCount === 2
+                ? [
+                    ["second", 2, "Second section", "Second body", "unknown", "Second details"],
+                    ["first", 1, "First section", "First body", "warning", "First details"]
+                ]
+                : Array.from({ length: rowCount }, (_, index) => [
+                    `section-${index}`, index, `Section ${index}`, `Body ${index}`, "unknown", `Details ${index}`
+                ])
         }
     } as DataView;
 }
@@ -773,11 +777,46 @@ describe("certification behavior", () => {
 
         expect(rows[0].getAttribute("aria-selected")).toBe("true");
         expect(harness.tooltipCalls.some((call) => call.kind === "show")).toBe(true);
+        expect(harness.tooltipCalls.find((call) => call.kind === "show")?.dataItems)
+            .toEqual([{ displayName: "Tooltip", value: "First details" }]);
         expect(harness.contextMenuCalls.at(-1)?.selectionId).toBe(harness.dataPointSelectionId);
 
         visual.update(createUpdateOptions());
         expect(element.querySelector(".structured-row")).toBeNull();
         expect(element.querySelector(".landing-page")).not.toBeNull();
+    });
+
+    it("limits structured rows before formatting and selection-ID allocation", () => {
+        const { element, harness, visual } = createVisual();
+        visual.update({
+            dataViews: [createStructuredDataView(201)],
+            viewport: { width: 640, height: 480 },
+            type: 2
+        } as VisualUpdateOptions);
+
+        expect(element.querySelectorAll(".structured-row")).toHaveLength(200);
+        expect(harness.tableRowIndexes).toHaveLength(200);
+        expect(harness.tableRowIndexes).not.toContain(200);
+        expect(element.textContent).toContain("row limit");
+    });
+
+    it("preserves existing row visuals during host multi-select", () => {
+        const { element, harness, visual } = createVisual();
+        visual.update(createStructuredUpdateOptions());
+        const rows = Array.from(element.querySelectorAll<HTMLElement>(".structured-row"));
+
+        rows[0].dispatchEvent(new MouseEvent("click", { bubbles: true, button: 0 }));
+        rows[1].dispatchEvent(new MouseEvent("click", {
+            bubbles: true,
+            button: 0,
+            ctrlKey: true
+        }));
+
+        expect(rows[0].classList.contains("selected")).toBe(true);
+        expect(rows[0].getAttribute("aria-selected")).toBe("true");
+        expect(rows[1].classList.contains("selected")).toBe(true);
+        expect(rows[1].getAttribute("aria-selected")).toBe("true");
+        expect(harness.selectCalls.map((call) => call.multiSelect)).toEqual([false, true]);
     });
 
     it("keeps table overflow focus stable across unchanged and changed documents", () => {
@@ -797,6 +836,17 @@ describe("certification behavior", () => {
         visual.update(createUpdateOptions("| A | B |\n| --- | --- |\n| 3 | 4 |"));
         expect(document.activeElement).toBe(element.querySelector(".table-scroll"));
         expect(container.scrollTop).toBe(19);
+    });
+
+    it("preserves safe Markdown table alignment in rendered cells", () => {
+        const { element, visual } = createVisual();
+        visual.update(createUpdateOptions(
+            "| Left | Center | Right |\n| :--- | :---: | ---: |\n| a | b | c |"
+        ));
+
+        expect(Array.from(element.querySelectorAll("table th")).map((cell) =>
+            cell.getAttribute("align")
+        )).toEqual(["left", "center", "right"]);
     });
 
     it("removes its context-menu listener when destroyed", () => {
