@@ -29,6 +29,14 @@ const DEFAULT_FONT_FAMILY = "Segoe UI, sans-serif";
 const DEFAULT_FONT_SIZE = 14;
 const DEFAULT_PADDING = 20;
 const DEFAULT_TEXT_COLOR = "#111827";
+const FOCUSABLE_CONTENT_SELECTOR = "a[data-safe-href], summary, pre[tabindex]";
+const UNSUPPORTED_LINK_REASON = "Only absolute HTTPS links can be opened.";
+
+interface ReadingState {
+    scrollTop: number;
+    focusKey?: string;
+    rootFocused: boolean;
+}
 
 const emojiMap: { [key: string]: string } = {
     ':smile:': '😄', ':grinning:': '😀', ':laughing:': '😆', ':joy:': '😂',
@@ -59,6 +67,8 @@ export class Visual implements IVisual {
     private eventService: IVisualEventService;
     private currentSelectionId?: ISelectionId;
     private readonly emptySelectionId = {} as ISelectionId;
+    private renderedKind: "none" | "landing" | "document" | "error" = "none";
+    private renderedMarkdown?: string;
     private formattingSettings = new VisualFormattingSettingsModel();
     private formattingSettingsService: FormattingSettingsService;
     private readonly contextMenuHandler = (event: MouseEvent): void => {
@@ -141,34 +151,64 @@ export class Visual implements IVisual {
             );
         }
 
-        this.container.replaceChildren();
-
         if (!dataView) {
-            this.showLandingPage();
+            if (this.renderedKind !== "landing") {
+                this.showLandingPage();
+            }
             this.applyFormatting();
             return;
         }
 
         const markdownValue = dataView.single?.value;
         if (markdownValue === undefined || markdownValue === null || String(markdownValue).trim() === "") {
-            this.showLandingPage();
+            if (this.renderedKind !== "landing") {
+                this.showLandingPage();
+            }
             this.applyFormatting();
             return;
         }
 
-        const markdownContent = this.processEmojis(String(markdownValue));
+        const markdownContent = String(markdownValue);
+        this.currentSelectionId = this.createMeasureSelectionId(dataView);
+        if (this.renderedKind === "document" && this.renderedMarkdown === markdownContent) {
+            this.applyFormatting();
+            return;
+        }
+
+        const readingState = this.captureReadingState();
         const rawHtml = marked.parse(markdownContent) as string;
         const safeFragment = this.createSafeFragment(rawHtml);
 
+        this.processTextEmojis(safeFragment);
         this.prepareSafeLinks(safeFragment);
         this.applySyntaxHighlighting(safeFragment);
+        this.prepareAccessibleContent(safeFragment);
         this.container.replaceChildren(safeFragment);
-        this.currentSelectionId = this.createMeasureSelectionId(dataView);
+        this.renderedKind = "document";
+        this.renderedMarkdown = markdownContent;
         this.applyFormatting();
+        this.restoreReadingState(readingState);
     }
 
-    private processEmojis(text: string): string {
-        return text.replace(/:[\w_]+:/g, (match) => emojiMap[match] || match);
+    private processTextEmojis(root: ParentNode): void {
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+        const textNodes: Text[] = [];
+        let currentNode = walker.nextNode();
+
+        while (currentNode) {
+            const parent = currentNode.parentElement;
+            if (!parent?.closest("code, pre")) {
+                textNodes.push(currentNode as Text);
+            }
+            currentNode = walker.nextNode();
+        }
+
+        textNodes.forEach((textNode) => {
+            textNode.data = textNode.data.replace(
+                /:[\w_]+:/g,
+                (match) => emojiMap[match] || match
+            );
+        });
     }
 
     private createSafeFragment(rawHtml: string): DocumentFragment {
@@ -259,18 +299,21 @@ export class Visual implements IVisual {
     }
 
     private prepareSafeLinks(root: ParentNode): void {
-        root.querySelectorAll("a[href]").forEach((link) => {
+        root.querySelectorAll("a").forEach((link) => {
             const anchor = link as HTMLAnchorElement;
             const href = this.getSafeHttpsUrl(anchor.getAttribute("href") ?? "");
 
             if (!href) {
-                anchor.removeAttribute("href");
-                anchor.removeAttribute("data-safe-href");
-                anchor.removeAttribute("role");
-                anchor.removeAttribute("tabindex");
-                anchor.removeAttribute("target");
-                anchor.removeAttribute("rel");
-                anchor.removeAttribute("referrerpolicy");
+                const replacement = document.createElement("span");
+                replacement.className = "unsupported-link";
+                replacement.title = UNSUPPORTED_LINK_REASON;
+                replacement.append(...Array.from(anchor.childNodes));
+
+                const reason = document.createElement("span");
+                reason.className = "unsupported-link-reason";
+                reason.textContent = " (unsupported link)";
+                replacement.appendChild(reason);
+                anchor.replaceWith(replacement);
                 return;
             }
 
@@ -278,6 +321,7 @@ export class Visual implements IVisual {
             anchor.setAttribute("data-safe-href", href);
             anchor.setAttribute("role", "link");
             anchor.setAttribute("tabindex", "0");
+            anchor.setAttribute("title", `Open HTTPS link to ${new URL(href).hostname}`);
             anchor.removeAttribute("target");
             anchor.removeAttribute("rel");
             anchor.removeAttribute("referrerpolicy");
@@ -323,6 +367,53 @@ export class Visual implements IVisual {
         });
     }
 
+    private prepareAccessibleContent(root: ParentNode): void {
+        root.querySelectorAll("pre").forEach((pre) => {
+            const language = this.getValidatedLanguage(pre.querySelector("code") ?? pre);
+            pre.setAttribute("tabindex", "0");
+            pre.setAttribute(
+                "aria-label",
+                language ? `${language} code block` : "Code block"
+            );
+        });
+    }
+
+    private captureReadingState(): ReadingState {
+        const activeElement = document.activeElement;
+
+        return {
+            scrollTop: this.container.scrollTop,
+            focusKey: activeElement instanceof HTMLElement
+                && activeElement.matches(FOCUSABLE_CONTENT_SELECTOR)
+                ? this.getFocusKey(activeElement)
+                : undefined,
+            rootFocused: activeElement === this.container
+        };
+    }
+
+    private restoreReadingState(state: ReadingState): void {
+        if (state.rootFocused) {
+            this.container.focus({ preventScroll: true });
+        } else if (state.focusKey) {
+            const focusTarget = Array.from(this.container.querySelectorAll<HTMLElement>(
+                FOCUSABLE_CONTENT_SELECTOR
+            )).find((candidate) => this.getFocusKey(candidate) === state.focusKey);
+            (focusTarget ?? this.container).focus({ preventScroll: true });
+        }
+
+        this.container.scrollTop = state.scrollTop;
+    }
+
+    private getFocusKey(element: HTMLElement): string {
+        if (element.matches("a[data-safe-href]")) {
+            return `link:${element.getAttribute("data-safe-href") ?? ""}`;
+        }
+        if (element.matches("summary")) {
+            return `summary:${element.textContent ?? ""}`;
+        }
+        return `code:${element.textContent ?? ""}`;
+    }
+
     private createMeasureSelectionId(dataView: DataView): ISelectionId | undefined {
         const measureColumn = dataView.metadata?.columns?.find(
             (column) => column.roles?.markdownContent && column.queryName
@@ -353,11 +444,15 @@ export class Visual implements IVisual {
 
         landingPage.append(heading, instructions, supportedFeatures);
         this.container.replaceChildren(landingPage);
+        this.renderedKind = "landing";
+        this.renderedMarkdown = undefined;
     }
 
     private showError(reason: string): void {
         this.currentSelectionId = undefined;
         this.container.replaceChildren();
+        this.renderedKind = "error";
+        this.renderedMarkdown = undefined;
 
         const errorContainer = document.createElement("div");
         errorContainer.className = "error";
@@ -388,12 +483,13 @@ export class Visual implements IVisual {
         const backgroundColor = isHighContrast
             ? colorPalette.background.value
             : configuredBackgroundColor;
+        const themeAccentColor = colorPalette.getColor("Atlyn Markdown Viewer").value;
         const accentColor = isHighContrast
             ? colorPalette.foreground.value
-            : DEFAULT_ACCENT_COLOR;
+            : themeAccentColor || DEFAULT_ACCENT_COLOR;
         const linkColor = isHighContrast
             ? colorPalette.hyperlink.value
-            : DEFAULT_ACCENT_COLOR;
+            : themeAccentColor || DEFAULT_ACCENT_COLOR;
         const borderColor = isHighContrast
             ? colorPalette.foreground.value
             : DEFAULT_BORDER_COLOR;

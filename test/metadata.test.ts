@@ -57,7 +57,7 @@ describe("certification metadata", () => {
 
     it("keeps canonical name, version, API, and GUID aligned", () => {
         expect(pbiviz.visual.displayName).toBe("Atlyn Markdown Viewer");
-        expect(pbiviz.visual.version).toBe("1.0.5.0");
+        expect(pbiviz.visual.version).toBe("1.0.6.0");
         expect(packageManifest.version).toBe(pbiviz.visual.version);
         expect(packageLock.version).toBe(pbiviz.visual.version);
         expect(packageLock.packages[""].version).toBe(pbiviz.visual.version);

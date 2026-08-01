@@ -20,18 +20,11 @@
     overflow-y: auto;
     height: 100%;
     box-sizing: border-box;
-}
 
-/* Dark Mode */
-.markdown-container.dark-mode {
-    --text-color: #F9FAFB;
-    --bg-color: #1F2937;
-    --border-color: #374151;
-    --code-bg: #374151;
-    --pre-bg: #111827;
-    --pre-text: #F9FAFB;
-    --table-header-bg: #374151;
-    --blockquote-bg: #374151;
+    &:focus-visible {
+        outline: 2px solid var(--accent-color);
+        outline-offset: -2px;
+    }
 }
 
 .markdown-container {
@@ -119,6 +112,11 @@
         overflow-x: auto;
         margin: 1em 0;
 
+        &:focus-visible {
+            outline: 2px solid var(--link-color);
+            outline-offset: 2px;
+        }
+
         code {
             background: transparent;
             padding: 0;
@@ -133,17 +131,28 @@
         background: var(--blockquote-bg);
     }
 
-    a {
+    a[data-safe-href] {
         color: var(--link-color);
-        text-decoration: none;
+        text-decoration: underline;
+        text-underline-offset: 0.15em;
 
         &:hover {
-            text-decoration: underline;
+            text-decoration-thickness: 2px;
         }
 
         &[role="link"]:focus-visible {
             outline: 2px solid var(--link-color);
             outline-offset: 2px;
+        }
+
+        .unsupported-link {
+            text-decoration: line-through;
+            text-decoration-thickness: 1px;
+        }
+
+        .unsupported-link-reason {
+            font-size: 0.85em;
+            font-style: italic;
         }
     }
 
@@ -182,41 +191,10 @@
             &:hover {
                 color: var(--accent-color);
             }
-        }
-    }
 
-    /* Mermaid diagrams */
-    .mermaid-diagram {
-        text-align: center;
-        margin: 1em 0;
-        padding: 1em;
-        background: var(--bg-color);
-        border-radius: 8px;
-        overflow-x: auto;
-        
-        svg {
-            max-width: 100%;
-            height: auto;
-        }
-    }
-
-    /* Table of Contents */
-    .toc {
-        background: var(--table-header-bg);
-        padding: 1em;
-        border-radius: 8px;
-        margin-bottom: 2em;
-        
-        ul {
-            list-style: none;
-            padding-left: 1em;
-        }
-        
-        a {
-            text-decoration: none;
-            
-            &:hover {
-                text-decoration: underline;
+            &:focus-visible {
+                outline: 2px solid var(--link-color);
+                outline-offset: 2px;
             }
         }
     }
@@ -237,132 +215,7 @@
 .hljs-variable { color: #F07178; }
 .hljs-operator { color: #89DDFF; }
 
-/* GitHub-style Alerts */
-.alert {
-    padding: 1em 1.5em;
-    border-radius: 8px;
-    margin: 1em 0;
-    border-left: 4px solid;
-    
-    strong {
-        display: block;
-        margin-bottom: 0.5em;
-    }
-    
-    p {
-        margin: 0;
-    }
-}
-
-.alert-note {
-    background: #DBEAFE;
-    border-color: #3B82F6;
-    color: #1E40AF;
-    
-    .dark-mode & {
-        background: #1E3A5F;
-        color: #93C5FD;
-    }
-}
-
-.alert-tip {
-    background: #D1FAE5;
-    border-color: #10B981;
-    color: #065F46;
-    
-    .dark-mode & {
-        background: #064E3B;
-        color: #6EE7B7;
-    }
-}
-
-.alert-important {
-    background: #EDE9FE;
-    border-color: #8B5CF6;
-    color: #5B21B6;
-    
-    .dark-mode & {
-        background: #4C1D95;
-        color: #C4B5FD;
-    }
-}
-
-.alert-warning {
-    background: #FEF3C7;
-    border-color: #F59E0B;
-    color: #92400E;
-    
-    .dark-mode & {
-        background: #78350F;
-        color: #FCD34D;
-    }
-}
-
-.alert-caution {
-    background: #FEE2E2;
-    border-color: #EF4444;
-    color: #991B1B;
-    
-    .dark-mode & {
-        background: #7F1D1D;
-        color: #FCA5A5;
-    }
-}
-
-/* Reading Stats */
-.reading-stats {
-    display: flex;
-    gap: 1.5em;
-    padding: 0.75em 1em;
-    background: var(--table-header-bg);
-    border-radius: 8px;
-    margin-bottom: 1.5em;
-    font-size: 0.9em;
-    opacity: 0.8;
-    
-    span {
-        display: flex;
-        align-items: center;
-        gap: 0.5em;
-    }
-}
-
-/* Task Lists */
-.task-item {
-    list-style: none;
-    margin-left: -1.5em;
-    
-    input[type="checkbox"] {
-        margin-right: 0.5em;
-        transform: scale(1.2);
-    }
-}
-
-/* Copy Button */
-.copy-button {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    padding: 4px 8px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
-    color: #F9FAFB;
-    cursor: pointer;
-    font-size: 12px;
-    opacity: 0;
-    transition: opacity 0.2s;
-    
-    &:hover {
-        background: rgba(255, 255, 255, 0.2);
-    }
-}
-
-pre:hover .copy-button {
-    opacity: 1;
-}
-
-/* Print Styles */
+/* Browser print styles are a fallback; Power BI export captures the visible viewport. */
 @media print {
     .markdown-container {
         background: white !important;
@@ -375,22 +228,9 @@ pre:hover .copy-button {
             border: 1px solid #ddd;
         }
         
-        .copy-button {
-            display: none !important;
-        }
-        
-        .reading-stats {
-            display: none !important;
-        }
-        
-        a {
+        a[data-safe-href] {
             color: black !important;
             text-decoration: underline !important;
-        }
-        
-        .alert {
-            border: 1px solid #999;
-            background: #f9f9f9 !important;
         }
     }
 }
@@ -424,7 +264,7 @@ pre:hover .copy-button {
     }
 }
 
-.placeholder, .error {
+.error {
     opacity: 0.7;
     font-style: italic;
     padding: 20px;
