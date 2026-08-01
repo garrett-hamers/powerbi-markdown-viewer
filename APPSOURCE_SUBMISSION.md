@@ -69,9 +69,9 @@ References:
 - [ ] Screenshots (exactly 1366x768 PNG, maximum 1024 KB) - **You need to capture these from Power BI Desktop**
 
 ### Documentation
-- [x] Privacy Policy - https://github.com/garrett-hamers/powerbi-markdown-viewer/blob/main/PRIVACY.md
-- [x] Support URL - https://github.com/garrett-hamers/powerbi-markdown-viewer/issues
-- [x] Terms/EULA - https://github.com/garrett-hamers/powerbi-markdown-viewer/blob/main/LICENSE
+- [x] Privacy Policy - https://github.com/garrett-hamers/powerbi-document-visual/blob/main/PRIVACY.md
+- [x] Support URL - https://github.com/garrett-hamers/powerbi-document-visual/issues
+- [x] Terms/EULA - https://github.com/garrett-hamers/powerbi-document-visual/blob/main/LICENSE
 - [x] README with usage instructions
 
 ### Sample Report
@@ -102,9 +102,9 @@ References:
    - Summary: Render Markdown content with syntax highlighting and emoji in Power BI
    - Description: (use README content)
    - Search keywords: markdown, documentation, readme, text, syntax
-   - Support link: https://github.com/garrett-hamers/powerbi-markdown-viewer/issues
-   - Privacy policy: https://github.com/garrett-hamers/powerbi-markdown-viewer/blob/main/PRIVACY.md
-   - Terms/EULA: https://github.com/garrett-hamers/powerbi-markdown-viewer/blob/main/LICENSE
+   - Support link: https://github.com/garrett-hamers/powerbi-document-visual/issues
+   - Privacy policy: https://github.com/garrett-hamers/powerbi-document-visual/blob/main/PRIVACY.md
+   - Terms/EULA: https://github.com/garrett-hamers/powerbi-document-visual/blob/main/LICENSE
 
 6. **Technical Configuration**
    - Upload `.pbiviz` file

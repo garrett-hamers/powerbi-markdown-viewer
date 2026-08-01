@@ -4,7 +4,7 @@
   "version": "1.1.0.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/garrett-hamers/powerbi-markdown-viewer.git"
+    "url": "https://github.com/garrett-hamers/powerbi-document-visual.git"
   },
   "license": "MIT",
   "engines": {
@@ -46,7 +46,7 @@
     "brace-expansion": "5.0.8"
   },
   "bugs": {
-    "url": "https://github.com/garrett-hamers/powerbi-markdown-viewer/issues"
+    "url": "https://github.com/garrett-hamers/powerbi-document-visual/issues"
   },
-  "homepage": "https://github.com/garrett-hamers/powerbi-markdown-viewer#readme"
+  "homepage": "https://github.com/garrett-hamers/powerbi-document-visual#readme"
 }

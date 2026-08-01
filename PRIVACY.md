@@ -27,4 +27,5 @@ For questions about this privacy policy, contact: atlyn.help@gmail.com
 
 ### Changes to This Policy
 
-Any changes to this privacy policy will be posted in the GitHub repository.
+Any changes to this privacy policy will be posted in the
+[GitHub repository](https://github.com/garrett-hamers/powerbi-document-visual).

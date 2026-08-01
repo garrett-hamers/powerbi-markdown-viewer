@@ -153,7 +153,7 @@ Run `npm ci` followed by `npm run certification:validate`. The local gate runs E
 
 ## Support
 
-- **Issues**: [GitHub Issues](../../issues)
+- **Issues**: [GitHub Issues](https://github.com/garrett-hamers/powerbi-document-visual/issues)
 - **Email**: atlyn.help@gmail.com
 
 ## License
