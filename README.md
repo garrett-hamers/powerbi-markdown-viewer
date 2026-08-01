@@ -20,7 +20,7 @@ Render clean, formatted tables directly from Markdown syntax.
 ![Table Support](assets/TableSupport.png)
 
 ### 😄 Emoji Support
-Convert emoji shortcodes like `:rocket:` to 🚀 — over 60 shortcodes supported.
+Convert emoji shortcodes like `:rocket:` to 🚀 — over 60 shortcodes supported. Shortcodes inside inline code, fenced code blocks, and link destinations remain literal.
 
 ![Emoji Support](assets/EmojiSupport.png)
 
@@ -40,9 +40,12 @@ The visual also honors Power BI's foreground, background, and hyperlink colors i
 
 ## Installation
 
-1. Download the `.pbiviz` file from [Releases](../../releases)
-2. In Power BI Desktop, go to the **Visualizations** pane → **…** → **Import a visual from a file**
-3. Select the downloaded `.pbiviz` file
+The historical `v1.0.0` package predates the visual's current sanitization and certification hardening and should not be installed. Until a current package is published, build from the current source:
+
+1. Run `npm ci`
+2. Run `npm run certification:validate`
+3. In Power BI Desktop, go to the **Visualizations** pane → **…** → **Import a visual from a file**
+4. Select `dist/atlynMarkdownViewer.pbiviz`
 
 ## Usage
 
@@ -117,7 +120,13 @@ RETURN
 
 ## Privacy Policy
 
-This visual does **not** collect, store, or transmit any user data. All markdown processing happens entirely within the Power BI environment. See [PRIVACY.md](PRIVACY.md) for full details.
+This visual does **not** collect, store, or automatically transmit user data. Markdown processing happens entirely within the Power BI environment. Choosing an HTTPS link opens that destination through the Power BI host. See [PRIVACY.md](PRIVACY.md) for full details.
+
+## Supported Content and Export
+
+The visual supports headings, paragraphs, emphasis, lists, blockquotes, tables, details, code, and absolute HTTPS links. Raw HTML is limited to the same safe document elements. Images, media, SVG, scripts, styles, forms, embedded content, relative links, and non-HTTPS links are removed or shown as unsupported text.
+
+Power BI PDF and PowerPoint export captures the visible visual viewport. For long documents, size the visual to the content intended for export or split documentation across report pages.
 
 ## Support
 

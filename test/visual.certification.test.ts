@@ -216,7 +216,7 @@ describe("certification behavior", () => {
 
         const links = Array.from(element.querySelectorAll("a"));
         const safeLink = links.find((link) => link.textContent === "Safe link");
-        const unsafeLink = links.find((link) => link.textContent === "Unsafe link");
+        const unsafeLink = element.querySelector(".unsupported-link");
 
         expect(safeLink?.hasAttribute("href")).toBe(false);
         expect(safeLink?.getAttribute("data-safe-href")).toBe("https://example.com/docs");
@@ -225,8 +225,9 @@ describe("certification behavior", () => {
         expect(safeLink?.hasAttribute("target")).toBe(false);
         expect(safeLink?.hasAttribute("rel")).toBe(false);
         expect(safeLink?.hasAttribute("referrerpolicy")).toBe(false);
-        expect(unsafeLink?.hasAttribute("href")).toBe(false);
-        expect(unsafeLink?.hasAttribute("data-safe-href")).toBe(false);
+        expect(unsafeLink?.textContent).toBe("Unsafe link (unsupported link)");
+        expect(unsafeLink?.getAttribute("title"))
+            .toBe("Only absolute HTTPS links can be opened.");
     });
 
     it("routes safe link activation through the Power BI host without native navigation", () => {
@@ -237,7 +238,7 @@ describe("certification behavior", () => {
 
         const links = Array.from(element.querySelectorAll("a"));
         const safeLink = links.find((link) => link.textContent === "Safe link");
-        const unsafeLink = links.find((link) => link.textContent === "Unsafe link");
+        const unsafeLink = element.querySelector(".unsupported-link");
         expect(safeLink).toBeDefined();
         expect(unsafeLink).toBeDefined();
 
@@ -287,6 +288,137 @@ describe("certification behavior", () => {
         expect(unsafeLink.hasAttribute("href")).toBe(false);
         expect(unsafeLink.hasAttribute("data-safe-href")).toBe(false);
         expect(harness.launchedUrls).toHaveLength(4);
+    });
+
+    it("preserves emoji shortcodes in code and link destinations", () => {
+        const { element, visual } = createVisual();
+        visual.update(createUpdateOptions([
+            "Text :rocket:",
+            "",
+            "Inline `:rocket:`",
+            "",
+            "```text",
+            ":rocket:",
+            "```",
+            "",
+            "[destination :rocket:](https://example.com/:rocket:)"
+        ].join("\n")));
+
+        expect(element.querySelector("p")?.textContent).toBe("Text 🚀");
+        expect(element.querySelector("p code")?.textContent).toBe(":rocket:");
+        expect(element.querySelector("pre code")?.textContent).toBe(":rocket:\n");
+
+        const link = element.querySelector("a[data-safe-href]");
+        expect(link?.textContent).toBe("destination 🚀");
+        expect(link?.getAttribute("data-safe-href"))
+            .toBe("https://example.com/:rocket:");
+    });
+
+    it("renders hostile URLs and active markup as inert explanatory text", () => {
+        const { element, visual } = createVisual();
+        visual.update(createUpdateOptions([
+            "<svg onload=\"alert(1)\"><script>alert(1)</script></svg>",
+            "<math href=\"javascript:alert(1)\">math</math>",
+            "<p onclick=\"alert(1)\" style=\"background:url(https://evil.example/x)\">safe text</p>",
+            "[JavaScript](javascript:alert(1))",
+            "[Data](data:text/html,<script>alert(1)</script>)",
+            "[Relative](/internal)",
+            "[Malformed](https://[invalid)"
+        ].join("\n\n")));
+
+        const container = element.querySelector(".markdown-container");
+        expect(container?.querySelector(
+            "svg, math, script, [onload], [onclick], [style], [href]"
+        )).toBeNull();
+        expect(element.textContent).toContain("safe text");
+        expect(element.querySelectorAll(".unsupported-link").length).toBeGreaterThanOrEqual(3);
+        expect(element.querySelector(".error")).toBeNull();
+    });
+
+    it("renders malformed markdown without executing or failing", () => {
+        const { element, harness, visual } = createVisual();
+        visual.update(createUpdateOptions([
+            "# Recoverable document",
+            "",
+            "[broken link](",
+            "",
+            "```text",
+            "unclosed :rocket:"
+        ].join("\n")));
+
+        expect(element.querySelector("h1")?.textContent).toBe("Recoverable document");
+        expect(element.querySelector("pre code")?.textContent)
+            .toContain("unclosed :rocket:");
+        expect(element.querySelector(".error")).toBeNull();
+        expect(harness.eventCalls).toEqual(["started", "finished"]);
+    });
+
+    it("reuses unchanged rendered content and preserves reading state", () => {
+        const explicitHighlight = vi.spyOn(hljs, "highlight");
+        const { element, visual } = createVisual();
+        const markdown = [
+            "[Documentation](https://example.com/docs)",
+            "",
+            "```javascript",
+            "const answer = 42;",
+            "```"
+        ].join("\n");
+
+        visual.update(createUpdateOptions(markdown));
+        const container = element.querySelector(".markdown-container") as HTMLElement;
+        const firstLink = element.querySelector("a[data-safe-href]") as HTMLElement;
+        container.scrollTop = 73;
+        firstLink.focus();
+
+        visual.update(createUpdateOptions(markdown, {
+            markdown: { fontSize: 18 }
+        } as powerbi.DataViewObjects));
+
+        expect(element.querySelector("a[data-safe-href]")).toBe(firstLink);
+        expect(document.activeElement).toBe(firstLink);
+        expect(container.scrollTop).toBe(73);
+        expect(container.style.fontSize).toBe("18px");
+        expect(explicitHighlight).toHaveBeenCalledOnce();
+    });
+
+    it("restores scroll and equivalent focus after changed content", () => {
+        const { element, visual } = createVisual();
+        visual.update(createUpdateOptions(
+            "[Before](https://example.com/before)\n\nParagraph"
+        ));
+
+        const container = element.querySelector(".markdown-container") as HTMLElement;
+        const firstLink = element.querySelector("a[data-safe-href]") as HTMLElement;
+        container.scrollTop = 41;
+        firstLink.focus();
+
+        visual.update(createUpdateOptions(
+            "[After](https://example.com/before)\n\nChanged paragraph"
+        ));
+
+        const nextLink = element.querySelector("a[data-safe-href]");
+        expect(nextLink).not.toBe(firstLink);
+        expect(document.activeElement).toBe(nextLink);
+        expect(container.scrollTop).toBe(41);
+    });
+
+    it("falls back to document focus when changed content removes the focused target", () => {
+        const { element, visual } = createVisual();
+        visual.update(createUpdateOptions(
+            "[Before](https://example.com/before)\n\nParagraph"
+        ));
+
+        const container = element.querySelector(".markdown-container") as HTMLElement;
+        const firstLink = element.querySelector("a[data-safe-href]") as HTMLElement;
+        container.scrollTop = 29;
+        firstLink.focus();
+
+        visual.update(createUpdateOptions(
+            "[After](https://example.com/after)\n\nChanged paragraph"
+        ));
+
+        expect(document.activeElement).toBe(container);
+        expect(container.scrollTop).toBe(29);
     });
 
     it("replaces content when incoming filters produce a new single value", () => {
