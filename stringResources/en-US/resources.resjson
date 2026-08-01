@@ -1,0 +1,20 @@
+{
+    "MarkdownViewer_DisplayName": "Atlyn Document",
+    "MarkdownViewer_Settings": "Markdown Settings",
+    "MarkdownViewer_FontFamily": "Font Family",
+    "MarkdownViewer_FontSize": "Font Size",
+    "MarkdownViewer_FontColor": "Font Color",
+    "MarkdownViewer_BackgroundColor": "Background Color",
+    "MarkdownViewer_Padding": "Padding",
+    "MarkdownViewer_ShowBorder": "Show Border",
+    "MarkdownViewer_ContentLabel": "Markdown content",
+    "MarkdownViewer_ScrollableTable": "Scrollable table",
+    "MarkdownViewer_AddMeasure": "Add a measure containing markdown text.",
+    "MarkdownViewer_SupportedFeatures": "Supports semantic headings, outline navigation, local search, tables, code, and safe HTTPS links.",
+    "MarkdownViewer_DocumentSettings": "Document Experience",
+    "MarkdownViewer_ShowOutline": "Show Outline",
+    "MarkdownViewer_ShowSearch": "Show Search",
+    "MarkdownViewer_ShowTrustStatus": "Show Trust Status",
+    "MarkdownViewer_CompactMode": "Compact / Export Presentation",
+    "MarkdownViewer_ReducedMotion": "Reduce Motion"
+}

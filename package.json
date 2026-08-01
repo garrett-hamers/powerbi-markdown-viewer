@@ -1,10 +1,10 @@
 {
   "name": "powerbi-markdown-viewer",
-  "description": "Render Markdown content with syntax highlighting and emoji support in Power BI reports",
-  "version": "1.0.6.0",
+  "description": "Render safe, searchable Markdown documents and typed Power BI narratives in reports",
+  "version": "1.1.0.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/garrett-hamers/powerbi-markdown-viewer.git"
+    "url": "https://github.com/garrett-hamers/powerbi-document-visual.git"
   },
   "license": "MIT",
   "engines": {
@@ -13,14 +13,14 @@
   "scripts": {
     "pbiviz": "pbiviz",
     "start": "pbiviz start",
-    "package": "powershell -NoProfile -Command \"if (Test-Path 'dist') { Get-ChildItem 'dist\\*.pbiviz' -File -ErrorAction SilentlyContinue | Remove-Item -Force }\" && pbiviz package --certification-audit && powershell -NoProfile -Command \"$files = @(Get-ChildItem 'dist\\*.pbiviz' -File); if ($files.Count -ne 1) { throw \\\"Expected exactly one generated .pbiviz file; found $($files.Count)\\\" }; Rename-Item -LiteralPath $files[0].FullName -NewName 'atlynMarkdownViewer.pbiviz' -Force\"",
+    "package": "powershell -NoProfile -Command \"if (Test-Path 'dist') { Get-ChildItem 'dist\\*.pbiviz' -File -ErrorAction SilentlyContinue | Remove-Item -Force }\" && pbiviz package --certification-audit && powershell -NoProfile -Command \"$files = @(Get-ChildItem 'dist\\*.pbiviz' -File); if ($files.Count -ne 1) { throw \\\"Expected exactly one generated .pbiviz file; found $($files.Count)\\\" }; Rename-Item -LiteralPath $files[0].FullName -NewName 'atlynMarkdownViewer.pbiviz' -Force\" && node scripts/audit-pbiviz.mjs",
     "certification:validate": "npm run eslint && tsc --noEmit && npm test && npm audit --audit-level=moderate && npm run package",
     "eslint": "npx eslint . --ext .js,.jsx,.ts,.tsx",
     "lint": "npm run eslint",
     "test": "vitest run"
   },
   "dependencies": {
-    "dompurify": "3.4.12",
+    "entities": "8.0.0",
     "highlight.js": "^11.11.1",
     "marked": "^4.3.0",
     "powerbi-visuals-api": "5.11.1",
@@ -46,7 +46,7 @@
     "brace-expansion": "5.0.8"
   },
   "bugs": {
-    "url": "https://github.com/garrett-hamers/powerbi-markdown-viewer/issues"
+    "url": "https://github.com/garrett-hamers/powerbi-document-visual/issues"
   },
-  "homepage": "https://github.com/garrett-hamers/powerbi-markdown-viewer#readme"
+  "homepage": "https://github.com/garrett-hamers/powerbi-document-visual#readme"
 }

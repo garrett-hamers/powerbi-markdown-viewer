@@ -4,34 +4,104 @@
             "displayName": "Markdown Content",
             "name": "markdownContent",
             "kind": "Measure"
+        },
+        {
+            "displayName": "Section",
+            "name": "section",
+            "kind": "Grouping"
+        },
+        {
+            "displayName": "Section Order",
+            "name": "sectionOrder",
+            "kind": "Measure"
+        },
+        {
+            "displayName": "Section Title",
+            "name": "sectionTitle",
+            "kind": "Grouping"
+        },
+        {
+            "displayName": "Section Body",
+            "name": "sectionBody",
+            "kind": "Grouping"
+        },
+        {
+            "displayName": "Section Kind",
+            "name": "sectionKind",
+            "kind": "Grouping"
+        },
+        {
+            "displayName": "Section Value",
+            "name": "sectionValue",
+            "kind": "Measure"
+        },
+        {
+            "displayName": "Section Status",
+            "name": "sectionStatus",
+            "kind": "Grouping"
+        },
+        {
+            "displayName": "Section Link",
+            "name": "sectionLink",
+            "kind": "Grouping"
+        },
+        {
+            "displayName": "Tooltip",
+            "name": "tooltip",
+            "kind": "Measure"
         }
     ],
     "objects": {
         "markdown": {
-            "displayName": "Markdown Settings",
+            "displayNameKey": "MarkdownViewer_Settings",
             "properties": {
                 "fontFamily": {
-                    "displayName": "Font Family",
+                    "displayNameKey": "MarkdownViewer_FontFamily",
                     "type": { "text": true }
                 },
                 "fontSize": {
-                    "displayName": "Font Size",
+                    "displayNameKey": "MarkdownViewer_FontSize",
                     "type": { "numeric": true }
                 },
                 "fontColor": {
-                    "displayName": "Font Color",
+                    "displayNameKey": "MarkdownViewer_FontColor",
                     "type": { "fill": { "solid": { "color": true } } }
                 },
                 "backgroundColor": {
-                    "displayName": "Background Color",
+                    "displayNameKey": "MarkdownViewer_BackgroundColor",
                     "type": { "fill": { "solid": { "color": true } } }
                 },
                 "padding": {
-                    "displayName": "Padding",
+                    "displayNameKey": "MarkdownViewer_Padding",
                     "type": { "numeric": true }
                 },
                 "showBorder": {
-                    "displayName": "Show Border",
+                    "displayNameKey": "MarkdownViewer_ShowBorder",
+                    "type": { "bool": true }
+                }
+            }
+        },
+        "document": {
+            "displayName": "Document Experience",
+            "properties": {
+                "showOutline": {
+                    "displayName": "Show Outline",
+                    "type": { "bool": true }
+                },
+                "showSearch": {
+                    "displayName": "Show Search",
+                    "type": { "bool": true }
+                },
+                "showTrustStatus": {
+                    "displayName": "Show Trust Status",
+                    "type": { "bool": true }
+                },
+                "compactMode": {
+                    "displayName": "Compact / Export Presentation",
+                    "type": { "bool": true }
+                },
+                "reducedMotion": {
+                    "displayName": "Reduce Motion",
                     "type": { "bool": true }
                 }
             }
@@ -49,11 +119,50 @@
             "single": {
                 "role": "markdownContent"
             }
+        },
+        {
+            "conditions": [
+                {
+                    "section": { "min": 1, "max": 1 },
+                    "sectionTitle": { "min": 1, "max": 1 },
+                    "sectionBody": { "min": 1, "max": 1 },
+                    "sectionOrder": { "max": 1 },
+                    "sectionKind": { "max": 1 },
+                    "sectionValue": { "max": 1 },
+                    "sectionStatus": { "max": 1 },
+                    "sectionLink": { "max": 1 },
+                    "tooltip": { "max": 1 }
+                }
+            ],
+            "table": {
+                "rows": {
+                    "select": [
+                        { "for": { "in": "section" } },
+                        { "for": { "in": "sectionOrder" } },
+                        { "for": { "in": "sectionTitle" } },
+                        { "for": { "in": "sectionBody" } },
+                        { "for": { "in": "sectionKind" } },
+                        { "for": { "in": "sectionValue" } },
+                        { "for": { "in": "sectionStatus" } },
+                        { "for": { "in": "sectionLink" } },
+                        { "for": { "in": "tooltip" } }
+                    ]
+                }
+            }
         }
     ],
     "supportsHighlight": false,
+    "supportsMultiVisualSelection": true,
     "supportsKeyboardFocus": true,
     "supportsLandingPage": true,
     "supportsEmptyDataView": true,
+    "tooltips": {
+        "supportedTypes": {
+            "default": true
+        },
+        "roles": [
+            "tooltip"
+        ]
+    },
     "privileges": []
 }

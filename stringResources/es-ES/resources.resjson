@@ -1,0 +1,20 @@
+{
+    "MarkdownViewer_DisplayName": "Documento de Atlyn",
+    "MarkdownViewer_Settings": "Configuración de Markdown",
+    "MarkdownViewer_FontFamily": "Familia de fuentes",
+    "MarkdownViewer_FontSize": "Tamaño de fuente",
+    "MarkdownViewer_FontColor": "Color de fuente",
+    "MarkdownViewer_BackgroundColor": "Color de fondo",
+    "MarkdownViewer_Padding": "Relleno",
+    "MarkdownViewer_ShowBorder": "Mostrar borde",
+    "MarkdownViewer_ContentLabel": "Contenido Markdown",
+    "MarkdownViewer_ScrollableTable": "Tabla desplazable",
+    "MarkdownViewer_AddMeasure": "Agregue una medida que contenga texto Markdown.",
+    "MarkdownViewer_SupportedFeatures": "Admite encabezados semánticos, navegación de esquema, búsqueda local, tablas, código y enlaces HTTPS seguros.",
+    "MarkdownViewer_DocumentSettings": "Experiencia del documento",
+    "MarkdownViewer_ShowOutline": "Mostrar esquema",
+    "MarkdownViewer_ShowSearch": "Mostrar búsqueda",
+    "MarkdownViewer_ShowTrustStatus": "Mostrar estado de confianza",
+    "MarkdownViewer_CompactMode": "Presentación compacta / exportación",
+    "MarkdownViewer_ReducedMotion": "Reducir movimiento"
+}
