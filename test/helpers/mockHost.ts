@@ -25,8 +25,13 @@ export interface MockHostOptions {
     failSelectionBuilder?: boolean;
     failSelectionBuilderOnCall?: number;
     highContrast?: boolean;
+    locale?: string;
+    instanceId?: string;
+    localizedStrings?: Record<string, string>;
     onRenderingFailed?: () => void;
 }
+
+let mockHostInstanceCount = 0;
 
 export function createMockHost(options: MockHostOptions = {}): MockHostHarness {
     const contextMenuCalls: ContextMenuCall[] = [];
@@ -99,6 +104,11 @@ export function createMockHost(options: MockHostOptions = {}): MockHostHarness {
         createSelectionManager: () => selectionManager,
         createSelectionIdBuilder,
         eventService,
+        locale: options.locale ?? "en-US",
+        instanceId: options.instanceId ?? `test-instance-${++mockHostInstanceCount}`,
+        createLocalizationManager: () => ({
+            getDisplayName: (key: string) => options.localizedStrings?.[key] ?? key
+        }),
         launchUrl: (url: string) => {
             launchedUrls.push(url);
         }

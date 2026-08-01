@@ -1,5 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
+import { findForbiddenSinks } from "../scripts/audit-pbiviz.mjs";
 
 interface AuditReport {
     metadata: {
@@ -36,5 +37,18 @@ describe("certification dependency audit", () => {
             moderate: 0,
             total: 0
         });
+    });
+
+    it("distinguishes inert forbidden API strings from executable bundle sinks", () => {
+        expect(findForbiddenSinks([
+            "const explanation = 'innerHTML, fetch(), WebSocket';",
+            "// eval('ignored')"
+        ].join("\n"))).toEqual([]);
+        expect(findForbiddenSinks("node.innerHTML = value;")).toEqual([
+            expect.objectContaining({ name: "innerHTML sink" })
+        ]);
+        expect(findForbiddenSinks("const value = fetch('/data');")).toEqual([
+            expect.objectContaining({ name: "fetch request" })
+        ]);
     });
 });

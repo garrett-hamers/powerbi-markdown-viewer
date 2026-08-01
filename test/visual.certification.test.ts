@@ -381,6 +381,98 @@ describe("certification behavior", () => {
         expect(explicitHighlight).toHaveBeenCalledOnce();
     });
 
+    it("skips document work and selection allocation for resize-only updates", () => {
+        const explicitHighlight = vi.spyOn(hljs, "highlight");
+        const { element, harness, visual } = createVisual();
+        visual.update(createUpdateOptions("```javascript\nconst answer = 42;\n```"));
+        const firstDocument = element.querySelector(".markdown-container")?.firstChild;
+        const initialSelectionCount = harness.measureIds.length;
+
+        visual.update({
+            dataViews: [],
+            viewport: { width: 320, height: 240 },
+            type: 4
+        } as VisualUpdateOptions);
+
+        expect(element.querySelector(".markdown-container")?.firstChild).toBe(firstDocument);
+        expect(harness.measureIds).toHaveLength(initialSelectionCount);
+        expect(explicitHighlight).toHaveBeenCalledOnce();
+    });
+
+    it("rejects oversized documents before allocating selection IDs or highlighting", () => {
+        const explicitHighlight = vi.spyOn(hljs, "highlight");
+        const { element, harness, visual } = createVisual();
+
+        visual.update(createUpdateOptions("x".repeat(250_001)));
+
+        expect(element.querySelector(".error")?.textContent)
+            .toContain("250,000 character limit");
+        expect(harness.measureIds).toHaveLength(0);
+        expect(explicitHighlight).not.toHaveBeenCalled();
+    });
+
+    it("bounds automatic detection for long unlabelled code blocks", () => {
+        const { element, harness, visual } = createVisual();
+
+        visual.update(createUpdateOptions(`\`\`\`\n${"x".repeat(8_001)}\n\`\`\``));
+
+        expect(element.querySelector(".error")?.textContent)
+            .toContain("add a language hint");
+        expect(harness.measureIds).toHaveLength(0);
+    });
+
+    it("creates scoped Unicode-safe IDs for duplicate and empty headings", () => {
+        const first = createVisual({ instanceId: "instance-one" });
+        const second = createVisual({ instanceId: "instance-two" });
+        const markdown = "# 🚀 Café\n\n# 🚀 Café\n\n# Привет мир\n\n#";
+
+        first.visual.update(createUpdateOptions(markdown));
+        second.visual.update(createUpdateOptions(markdown));
+
+        const firstIds = Array.from(first.element.querySelectorAll("h1")).map((heading) =>
+            heading.id
+        );
+        const secondIds = Array.from(second.element.querySelectorAll("h1")).map((heading) =>
+            heading.id
+        );
+        expect(new Set(firstIds).size).toBe(4);
+        expect(firstIds[0]).toContain("🚀");
+        expect(firstIds[1]).toContain("-2");
+        expect(firstIds[2]).toContain("привет-мир");
+        expect(firstIds[3]).toContain("heading");
+        expect(new Set([...firstIds, ...secondIds]).size).toBe(8);
+        expect(first.element.querySelector("h1")?.getAttribute("tabindex")).toBe("-1");
+    });
+
+    it("wraps tables in a focusable logical overflow container", () => {
+        const { element, visual } = createVisual();
+
+        visual.update(createUpdateOptions("| A | B |\n| --- | --- |\n| 1 | 2 |"));
+
+        const wrapper = element.querySelector(".table-scroll");
+        expect(wrapper?.getAttribute("tabindex")).toBe("0");
+        expect(wrapper?.getAttribute("aria-label")).toBe("Scrollable table");
+        expect(wrapper?.querySelector("table th")?.getAttribute("scope")).toBe("col");
+        expect(wrapper?.querySelector("table")?.parentElement).toBe(wrapper);
+    });
+
+    it("sets RTL direction and uses localized visual-owned strings", () => {
+        const { element, visual } = createVisual({
+            locale: "ar-SA",
+            localizedStrings: {
+                MarkdownViewer_DisplayName: "عارض Markdown",
+                MarkdownViewer_ContentLabel: "محتوى Markdown"
+            }
+        });
+
+        visual.update(createUpdateOptions());
+
+        const container = element.querySelector(".markdown-container");
+        expect(container?.getAttribute("dir")).toBe("rtl");
+        expect(container?.getAttribute("aria-label")).toBe("محتوى Markdown");
+        expect(element.querySelector(".landing-page h2")?.textContent).toBe("عارض Markdown");
+    });
+
     it("restores scroll and equivalent focus after changed content", () => {
         const { element, visual } = createVisual();
         visual.update(createUpdateOptions(

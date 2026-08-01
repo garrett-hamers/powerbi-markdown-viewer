@@ -8,30 +8,30 @@
     ],
     "objects": {
         "markdown": {
-            "displayName": "Markdown Settings",
+            "displayNameKey": "MarkdownViewer_Settings",
             "properties": {
                 "fontFamily": {
-                    "displayName": "Font Family",
+                    "displayNameKey": "MarkdownViewer_FontFamily",
                     "type": { "text": true }
                 },
                 "fontSize": {
-                    "displayName": "Font Size",
+                    "displayNameKey": "MarkdownViewer_FontSize",
                     "type": { "numeric": true }
                 },
                 "fontColor": {
-                    "displayName": "Font Color",
+                    "displayNameKey": "MarkdownViewer_FontColor",
                     "type": { "fill": { "solid": { "color": true } } }
                 },
                 "backgroundColor": {
-                    "displayName": "Background Color",
+                    "displayNameKey": "MarkdownViewer_BackgroundColor",
                     "type": { "fill": { "solid": { "color": true } } }
                 },
                 "padding": {
-                    "displayName": "Padding",
+                    "displayNameKey": "MarkdownViewer_Padding",
                     "type": { "numeric": true }
                 },
                 "showBorder": {
-                    "displayName": "Show Border",
+                    "displayNameKey": "MarkdownViewer_ShowBorder",
                     "type": { "bool": true }
                 }
             }

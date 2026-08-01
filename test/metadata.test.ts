@@ -57,7 +57,7 @@ describe("certification metadata", () => {
 
     it("keeps canonical name, version, API, and GUID aligned", () => {
         expect(pbiviz.visual.displayName).toBe("Atlyn Markdown Viewer");
-        expect(pbiviz.visual.version).toBe("1.0.6.0");
+        expect(pbiviz.visual.version).toBe("1.0.7.0");
         expect(packageManifest.version).toBe(pbiviz.visual.version);
         expect(packageLock.version).toBe(pbiviz.visual.version);
         expect(packageLock.packages[""].version).toBe(pbiviz.visual.version);
@@ -83,6 +83,8 @@ describe("certification metadata", () => {
         for (const file of requiredFiles) {
             expect(existsSync(resolve(process.cwd(), file)), file).toBe(true);
         }
+        expect(existsSync(resolve(process.cwd(), "stringResources/en-US/resources.resjson"))).toBe(true);
+        expect(existsSync(resolve(process.cwd(), "stringResources/es-ES/resources.resjson"))).toBe(true);
         expect(findFiles(process.cwd(), "pbiviz.json")).toHaveLength(1);
     });
 

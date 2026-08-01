@@ -1,7 +1,7 @@
 {
   "name": "powerbi-markdown-viewer",
   "description": "Render Markdown content with syntax highlighting and emoji support in Power BI reports",
-  "version": "1.0.6.0",
+  "version": "1.0.7.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/garrett-hamers/powerbi-markdown-viewer.git"
@@ -13,14 +13,13 @@
   "scripts": {
     "pbiviz": "pbiviz",
     "start": "pbiviz start",
-    "package": "powershell -NoProfile -Command \"if (Test-Path 'dist') { Get-ChildItem 'dist\\*.pbiviz' -File -ErrorAction SilentlyContinue | Remove-Item -Force }\" && pbiviz package --certification-audit && powershell -NoProfile -Command \"$files = @(Get-ChildItem 'dist\\*.pbiviz' -File); if ($files.Count -ne 1) { throw \\\"Expected exactly one generated .pbiviz file; found $($files.Count)\\\" }; Rename-Item -LiteralPath $files[0].FullName -NewName 'atlynMarkdownViewer.pbiviz' -Force\"",
+    "package": "powershell -NoProfile -Command \"if (Test-Path 'dist') { Get-ChildItem 'dist\\*.pbiviz' -File -ErrorAction SilentlyContinue | Remove-Item -Force }\" && pbiviz package --certification-audit && powershell -NoProfile -Command \"$files = @(Get-ChildItem 'dist\\*.pbiviz' -File); if ($files.Count -ne 1) { throw \\\"Expected exactly one generated .pbiviz file; found $($files.Count)\\\" }; Rename-Item -LiteralPath $files[0].FullName -NewName 'atlynMarkdownViewer.pbiviz' -Force\" && node scripts/audit-pbiviz.mjs",
     "certification:validate": "npm run eslint && tsc --noEmit && npm test && npm audit --audit-level=moderate && npm run package",
     "eslint": "npx eslint . --ext .js,.jsx,.ts,.tsx",
     "lint": "npm run eslint",
     "test": "vitest run"
   },
   "dependencies": {
-    "dompurify": "3.4.12",
     "highlight.js": "^11.11.1",
     "marked": "^4.3.0",
     "powerbi-visuals-api": "5.11.1",

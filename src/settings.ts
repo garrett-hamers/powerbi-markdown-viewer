@@ -17,43 +17,43 @@ import FormattingSettingsModel = formattingSettings.Model;
 export class MarkdownSettingsCard extends FormattingSettingsCard {
     fontFamily = new formattingSettings.TextInput({
         name: "fontFamily",
-        displayName: "Font Family",
+        displayNameKey: "MarkdownViewer_FontFamily",
         placeholder: "Segoe UI",
         value: "Segoe UI, sans-serif"
     });
 
     fontSize = new formattingSettings.NumUpDown({
         name: "fontSize",
-        displayName: "Font Size",
+        displayNameKey: "MarkdownViewer_FontSize",
         value: 14
     });
 
     fontColor = new formattingSettings.ColorPicker({
         name: "fontColor",
-        displayName: "Font Color",
+        displayNameKey: "MarkdownViewer_FontColor",
         value: { value: "#111827" }
     });
 
     backgroundColor = new formattingSettings.ColorPicker({
         name: "backgroundColor",
-        displayName: "Background Color",
+        displayNameKey: "MarkdownViewer_BackgroundColor",
         value: { value: "#FFFFFF" }
     });
 
     padding = new formattingSettings.NumUpDown({
         name: "padding",
-        displayName: "Padding",
+        displayNameKey: "MarkdownViewer_Padding",
         value: 20
     });
 
     showBorder = new formattingSettings.ToggleSwitch({
         name: "showBorder",
-        displayName: "Show Border",
+        displayNameKey: "MarkdownViewer_ShowBorder",
         value: false
     });
 
     name: string = "markdown";
-    displayName: string = "Markdown Settings";
+    displayNameKey: string = "MarkdownViewer_Settings";
     slices: Array<FormattingSettingsSlice> = [
         this.fontFamily,
         this.fontSize,

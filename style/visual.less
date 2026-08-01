@@ -18,8 +18,10 @@
     background-color: var(--bg-color);
     padding: 20px;
     overflow-y: auto;
+    overflow-x: hidden;
     height: 100%;
     box-sizing: border-box;
+    direction: inherit;
 
     &:focus-visible {
         outline: 2px solid var(--accent-color);
@@ -32,8 +34,8 @@
         font-size: 2em;
         font-weight: 600;
         color: var(--text-color);
-        border-bottom: 2px solid var(--accent-color);
-        padding-bottom: 0.5em;
+        border-block-end: 2px solid var(--accent-color);
+        padding-block-end: 0.5em;
         margin: 0 0 1em 0;
     }
 
@@ -66,7 +68,7 @@
 
     ul, ol {
         margin: 0.75em 0;
-        padding-left: 2em;
+        padding-inline-start: 2em;
     }
 
     li {
@@ -75,6 +77,7 @@
 
     table {
         border-collapse: collapse;
+        min-inline-size: max-content;
         width: 100%;
         margin: 1em 0;
     }
@@ -82,14 +85,16 @@
     th {
         background: var(--table-header-bg);
         border: 1px solid var(--border-color);
-        padding: 12px;
-        text-align: left;
+        padding-block: 12px;
+        padding-inline: 12px;
+        text-align: start;
         font-weight: 600;
     }
 
     td {
         border: 1px solid var(--border-color);
-        padding: 12px;
+        padding-block: 12px;
+        padding-inline: 12px;
     }
 
     tr:nth-child(even) {
@@ -125,9 +130,10 @@
     }
 
     blockquote {
-        border-left: 4px solid var(--accent-color);
+        border-inline-start: 4px solid var(--accent-color);
         margin: 1em 0;
-        padding: 0.5em 1em;
+        padding-block: 0.5em;
+        padding-inline: 1em;
         background: var(--blockquote-bg);
     }
 
@@ -145,15 +151,6 @@
             outline-offset: 2px;
         }
 
-        .unsupported-link {
-            text-decoration: line-through;
-            text-decoration-thickness: 1px;
-        }
-
-        .unsupported-link-reason {
-            font-size: 0.85em;
-            font-style: italic;
-        }
     }
 
     strong {
@@ -215,6 +212,34 @@
 .hljs-variable { color: #F07178; }
 .hljs-operator { color: #89DDFF; }
 
+.table-scroll {
+    max-inline-size: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    margin-block: 1em;
+    overscroll-behavior-inline: contain;
+
+    &:focus-visible {
+        outline: 2px solid var(--link-color);
+        outline-offset: 2px;
+    }
+
+    table {
+        margin-block: 0;
+    }
+}
+
+.unsupported-link {
+    text-decoration: line-through;
+    text-decoration-thickness: 1px;
+}
+
+.unsupported-link-reason {
+    margin-inline-start: 0.35em;
+    font-size: 0.85em;
+    font-style: italic;
+}
+
 /* Browser print styles are a fallback; Power BI export captures the visible viewport. */
 @media print {
     .markdown-container {
@@ -232,11 +257,15 @@
             color: black !important;
             text-decoration: underline !important;
         }
+
+        .table-scroll {
+            overflow: visible !important;
+        }
     }
 }
 
 .landing-page {
-    text-align: left;
+    text-align: start;
     
     h2 {
         color: var(--accent-color);
@@ -256,7 +285,7 @@
     }
     
     ul {
-        padding-left: 1.5em;
+        padding-inline-start: 1.5em;
         
         li {
             margin: 0.3em 0;
@@ -282,6 +311,10 @@
     pre,
     blockquote,
     details {
+        border: 2px solid var(--border-color);
+    }
+
+    .table-scroll {
         border: 2px solid var(--border-color);
     }
 
