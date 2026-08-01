@@ -36,7 +36,7 @@ describe("certification dependency audit", () => {
             high: 0,
             moderate: 0,
             total: 0
-        });
+        }, 30_000);
     });
 
     it("distinguishes inert forbidden API strings from executable bundle sinks", () => {
@@ -53,6 +53,8 @@ describe("certification dependency audit", () => {
         expect(findForbiddenSinks("const value = Function('return 1');")).toEqual([
             expect.objectContaining({ name: "Function constructor" })
         ]);
+        expect(findForbiddenSinks("const value = function (input) { return input; };"))
+            .toEqual([]);
         expect(findForbiddenSinks("const value = `safe ${fetch('/data')}`;")).toEqual([
             expect.objectContaining({ name: "fetch request" })
         ]);

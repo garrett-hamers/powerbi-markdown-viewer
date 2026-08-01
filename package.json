@@ -1,7 +1,7 @@
 {
   "name": "powerbi-markdown-viewer",
-  "description": "Render Markdown content with syntax highlighting and emoji support in Power BI reports",
-  "version": "1.0.7.0",
+  "description": "Render safe, searchable Markdown documents and typed Power BI narratives in reports",
+  "version": "1.1.0.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/garrett-hamers/powerbi-markdown-viewer.git"

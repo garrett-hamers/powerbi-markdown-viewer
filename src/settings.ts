@@ -64,10 +64,53 @@ export class MarkdownSettingsCard extends FormattingSettingsCard {
     ];
 }
 
+export class DocumentSettingsCard extends FormattingSettingsCard {
+    showOutline = new formattingSettings.ToggleSwitch({
+        name: "showOutline",
+        displayNameKey: "MarkdownViewer_ShowOutline",
+        value: true
+    });
+
+    showSearch = new formattingSettings.ToggleSwitch({
+        name: "showSearch",
+        displayNameKey: "MarkdownViewer_ShowSearch",
+        value: true
+    });
+
+    showTrustStatus = new formattingSettings.ToggleSwitch({
+        name: "showTrustStatus",
+        displayNameKey: "MarkdownViewer_ShowTrustStatus",
+        value: true
+    });
+
+    compactMode = new formattingSettings.ToggleSwitch({
+        name: "compactMode",
+        displayNameKey: "MarkdownViewer_CompactMode",
+        value: false
+    });
+
+    reducedMotion = new formattingSettings.ToggleSwitch({
+        name: "reducedMotion",
+        displayNameKey: "MarkdownViewer_ReducedMotion",
+        value: false
+    });
+
+    name: string = "document";
+    displayNameKey: string = "MarkdownViewer_DocumentSettings";
+    slices: Array<FormattingSettingsSlice> = [
+        this.showOutline,
+        this.showSearch,
+        this.showTrustStatus,
+        this.compactMode,
+        this.reducedMotion
+    ];
+}
+
 /**
  * Visual settings model class
  */
 export class VisualFormattingSettingsModel extends FormattingSettingsModel {
     markdownCard = new MarkdownSettingsCard();
-    cards = [this.markdownCard];
+    document = new DocumentSettingsCard();
+    cards = [this.markdownCard, this.document];
 }

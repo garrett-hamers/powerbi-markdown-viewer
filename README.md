@@ -1,6 +1,6 @@
-# Atlyn Markdown Viewer
+# Atlyn Document
 
-A custom Power BI visual that renders Markdown content directly in your reports with GitHub Flavored Markdown support, syntax highlighting, and emoji shortcodes.
+A certified-first Power BI document visual that renders safe Markdown and explicitly typed Power BI narratives with semantic structure, local search, outline navigation, and visible completeness diagnostics.
 
 ![Full Feature Preview](assets/FullFeature.png)
 
@@ -10,10 +10,7 @@ A custom Power BI visual that renders Markdown content directly in your reports 
 GitHub Flavored Markdown (GFM) patterns including headers, bold, italic, lists, HTTPS links, blockquotes, and more. Raw HTML is sanitized, and remote images or media are not loaded automatically.
 
 ### 💻 Syntax Highlighting
-Syntax highlighting for JavaScript, TypeScript, JSON, XML, CSS, Markdown, Bash,
-Python, SQL, C#, and Java code blocks powered by the core [highlight.js](https://highlightjs.org/)
-build. Add a fenced language hint for predictable results; unlabelled blocks use
-bounded automatic detection.
+Automatic language detection and syntax highlighting for code blocks powered by [highlight.js](https://highlightjs.org/).
 
 ![Code Highlighting](assets/CodeHighlighting.png)
 
@@ -27,6 +24,12 @@ Convert emoji shortcodes like `:rocket:` to 🚀 — over 60 shortcodes supporte
 
 ![Emoji Support](assets/EmojiSupport.png)
 
+### 🧭 Document navigation and trust
+Every document is normalized into a bounded semantic model. Headings receive deterministic IDs and a keyboard-accessible outline; search indexes logical content rather than only visible DOM nodes. A status disclosure reports blocked content, unsafe links, size limits, and partial structured data by category and count without echoing source payloads.
+
+### 📋 Typed Power BI sections
+For row-aware narratives, bind `Section`, `Section Title`, and `Section Body`, then optionally provide `Section Order`, `Section Kind`, `Section Value`, `Section Status`, `Section Link`, and `Tooltip`. Ordering is explicit and deterministic. Rows have host selection identities, keyboard selection, context menus, formatted text values, and a bounded visible window. The visual never infers business meaning from colors or numbers.
+
 ### 🎨 Customizable Formatting
 Adjust the visual appearance through the Power BI Format pane:
 
@@ -38,25 +41,26 @@ Adjust the visual appearance through the Power BI Format pane:
 | Background Color | Set background fill | #FFFFFF |
 | Padding | Inner spacing (px) | 20 |
 | Show Border | Toggle a rounded border | Off |
+| Show Outline | Display the document outline | On |
+| Show Search | Display local document search | On |
+| Show Trust Status | Display completeness diagnostics | On |
+| Compact / Export Presentation | Reduce authoring chrome | Off |
+| Reduce Motion | Disable document motion | Off |
 
 The visual also honors Power BI's foreground, background, and hyperlink colors in Windows high-contrast mode.
 
 ## Installation
 
-The historical `v1.0.0` package predates the visual's current sanitization and certification hardening and should not be installed. For the certified submission, use a package produced from the exact reviewed source commit:
+The historical `v1.0.0` package predates the visual's current sanitization and certification hardening and should not be installed. Until a current package is published, build from the current source:
 
 1. Run `npm ci`
 2. Run `npm run certification:validate`
 3. In Power BI Desktop, go to the **Visualizations** pane → **…** → **Import a visual from a file**
-4. Select `dist/atlynMarkdownViewer.pbiviz`.
-
-The local `npm run certification:validate` command is the certification gate. It
-runs lint, type checking, tests, the dependency audit, packaging, and an
-artifact-level scan of the embedded visual resource. Hosted CI/CD is not used.
+4. Select `dist/atlynMarkdownViewer.pbiviz`
 
 ## Usage
 
-1. Add the **Atlyn Markdown Viewer** visual to your report canvas
+1. Add the **Atlyn Document** visual to your report canvas
 2. Create a DAX measure that returns markdown text
 3. Drag the measure to the **Markdown Content** field well
 
@@ -80,10 +84,7 @@ RETURN
 "- Contact the analytics team for questions :email:"
 ```
 
-The data contract is one **TEXT measure**. If a source value is numeric or date
-typed, convert it to Markdown text in DAX (for example with `FORMAT`) before
-concatenating it; the visual intentionally does not invent numeric row
-formatting.
+For a structured narrative, add the typed fields to the corresponding wells. `Section`, `Section Title`, and `Section Body` are required; `Section Order` is recommended because Power BI table rows must not be assumed to be ordered. Use explicit status values such as `good`, `warning`, or `blocked` rather than encoding status in a color or number.
 
 ## Supported Emoji
 
@@ -132,35 +133,23 @@ formatting.
 
 ## Privacy Policy
 
-This visual does **not** collect, store, or automatically transmit user data. Markdown processing happens entirely within the Power BI environment. Choosing an HTTPS link opens that destination through the Power BI host. See [PRIVACY.md](PRIVACY.md) for full details.
+This visual does **not** collect, store, or automatically transmit user data. Markdown processing, parsing, search indexing, and diagnostics happen entirely within the Power BI environment. Choosing an HTTPS link opens that destination through the Power BI host. See [PRIVACY.md](PRIVACY.md) for full details.
 
-## Limits, Localization, and Export
+## Supported Content and Export
 
-The visual supports headings, paragraphs, emphasis, lists, blockquotes, tables,
-details/summary, code, emoji shortcodes, and absolute HTTPS links. Raw HTML is
-restricted to the same safe document elements. Images, media, SVG, scripts,
-styles, forms, embedded content, relative links, and non-HTTPS links are
-removed or shown as unsupported text. Unsupported links are inert and visibly
-annotated; they never use native browser navigation.
+The visual supports semantic headings, paragraphs, emphasis, lists, blockquotes, tables with captions and headers, native disclosures, status callouts, code, emoji, and absolute HTTPS links. Raw HTML is limited to the same safe document elements. Images, media, SVG, scripts, styles, forms, embedded content, relative links, and non-HTTPS links are removed or shown as unsupported text.
 
-For predictable performance, documents are limited to 250,000 characters, 100
-fenced code blocks, and 20,000 characters per block. Unlabelled automatic
-highlighting is limited to 8,000 characters; exceeding a limit shows an
-accessible error instead of silently truncating content. Tables use a
-focusable horizontal-overflow wrapper while retaining native table semantics.
+The certified rendering policy bounds source content at 512 KiB, logical blocks at 2,000, nesting at 40 levels, code at 100 blocks and 20,000 characters per block, unlabelled automatic code detection at 8,000 characters, and structured rows at a bounded visible window. When a limit or Power BI data reduction applies, the visual shows a limited state and a category-level diagnostic. Removed payloads, URLs, and script text are never copied into diagnostics.
 
-The package includes an en-US baseline and es-ES resources. The visual follows
-the host locale for localized owned strings and RTL direction (including
-Arabic, Hebrew, Persian, Urdu, and related RTL locales). Markdown content
-itself remains user-authored text.
+Power BI PDF and PowerPoint export captures the visible visual viewport after rendering completes. Compact presentation reduces authoring chrome, but the visual does not claim that a scrollable document automatically becomes a complete multi-page PDF. For long documents, size the visual to the content intended for export or split documentation across report pages.
 
-Power BI PDF and PowerPoint export starts at the visual's default/top scroll
-position and captures the visible visual viewport, not an arbitrarily long
-document. For long documents, size the visual to the intended export area or
-split documentation across report pages. The visual has no structured rows, so
-row selection state, cross-filter/highlight, row tooltips, drill, expand,
-sort/filter APIs, and categorical/table/matrix mappings are not applicable.
-The existing single-measure context menu remains supported.
+## Accessibility and keyboard use
+
+Press **Enter** when Power BI moves focus into the visual. Use the toolbar search field, outline links, native disclosure controls, safe links, and structured row controls with the keyboard. **Escape** returns focus to the visual container. Focus and reading position are restored by stable document identity after equivalent updates. High contrast uses the host palette, status is not conveyed by color alone, and prose reflows while only table regions scroll horizontally.
+
+## Local validation
+
+Run `npm ci` followed by `npm run certification:validate`. The local gate runs ESLint, TypeScript, unit/security tests, `npm audit --audit-level=moderate`, and the certification-audited package command. Generated `dist/` and `.tmp/` output is intentionally ignored and must not be committed.
 
 ## Support
 

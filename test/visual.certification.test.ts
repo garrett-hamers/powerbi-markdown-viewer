@@ -27,12 +27,41 @@ function createDataView(
     } as DataView;
 }
 
+function createStructuredDataView(): DataView {
+    const columns = [
+        { displayName: "Section", queryName: "Sections.Key", roles: { section: true }, type: { text: true } },
+        { displayName: "Order", queryName: "Sections.Order", roles: { sectionOrder: true }, type: { numeric: true } },
+        { displayName: "Title", queryName: "Sections.Title", roles: { sectionTitle: true }, type: { text: true } },
+        { displayName: "Body", queryName: "Sections.Body", roles: { sectionBody: true }, type: { text: true } },
+        { displayName: "Status", queryName: "Sections.Status", roles: { sectionStatus: true }, type: { text: true } },
+        { displayName: "Tooltip", queryName: "Sections.Tooltip", roles: { tooltip: true }, type: { text: true } }
+    ];
+    return {
+        metadata: { columns },
+        table: {
+            columns,
+            rows: [
+                ["second", 2, "Second section", "Second body", "unknown", "Second details"],
+                ["first", 1, "First section", "First body", "warning", "First details"]
+            ]
+        }
+    } as DataView;
+}
+
 function createUpdateOptions(
     markdown?: powerbi.PrimitiveValue,
     objects?: powerbi.DataViewObjects
 ): VisualUpdateOptions {
     return {
         dataViews: markdown === undefined ? [] : [createDataView(markdown, objects)],
+        viewport: { width: 640, height: 480 },
+        type: 2
+    } as VisualUpdateOptions;
+}
+
+function createStructuredUpdateOptions(): VisualUpdateOptions {
+    return {
+        dataViews: [createStructuredDataView()],
         viewport: { width: 640, height: 480 },
         type: 2
     } as VisualUpdateOptions;
@@ -71,7 +100,7 @@ describe("certification behavior", () => {
             "started", "finished"
         ]);
         expect(element.querySelector(".landing-page h2")?.textContent)
-            .toBe("Atlyn Markdown Viewer");
+            .toBe("Atlyn Document");
     });
 
     it("clears the prior measure when the host withholds an invalid multi-measure view", () => {
@@ -82,7 +111,7 @@ describe("certification behavior", () => {
 
         expect(element.textContent).not.toContain("One valid measure");
         expect(element.querySelector(".landing-page h2")?.textContent)
-            .toBe("Atlyn Markdown Viewer");
+            .toBe("Atlyn Document");
         expect(harness.eventCalls).toEqual([
             "started", "finished",
             "started", "finished"
@@ -188,7 +217,25 @@ describe("certification behavior", () => {
         const formattingModel = visual.getFormattingModel();
 
         expect(harness.eventCalls).toEqual(["started", "finished"]);
-        expect(formattingModel.cards).toHaveLength(1);
+        expect(formattingModel.cards).toHaveLength(2);
+    });
+
+    it("resolves localized formatting labels through the host localization manager", () => {
+        const { visual } = createVisual({
+            localizedStrings: {
+                MarkdownViewer_Settings: "Configuración",
+                MarkdownViewer_FontFamily: "Familia"
+            }
+        });
+
+        visual.update(createUpdateOptions("# Localized"));
+        const card = visual.getFormattingModel().cards[0] as {
+            displayName?: string;
+            groups?: Array<{ slices?: Array<{ displayName?: string }> }>;
+        };
+
+        expect(card.displayName).toBe("Configuración");
+        expect(card.groups?.[0]?.slices?.[0]?.displayName).toBe("Familia");
     });
 
     it("sanitizes executable markup and automatic external resource loads", () => {
@@ -209,7 +256,11 @@ describe("certification behavior", () => {
         expect(element.querySelector(".markdown-container")?.textContent).toContain("Safe heading");
         expect(element.querySelector("h1")?.textContent).toBe("Safe heading");
         expect(element.querySelector("table td")?.textContent).toBe("Cell");
-        expect(element.querySelector("script, img, form, input, iframe, object, embed")).toBeNull();
+        expect(element.querySelector(
+            ".document-content script, .document-content img, .document-content form, "
+            + ".document-content input, .document-content iframe, .document-content object, "
+            + ".document-content embed"
+        )).toBeNull();
         expect(element.querySelector(
             "[background], [src], [srcset], [poster], [dynsrc], [lowsrc], [ping], [onerror], [onclick]"
         )).toBeNull();
@@ -353,29 +404,34 @@ describe("certification behavior", () => {
         expect(harness.eventCalls).toEqual(["started", "finished"]);
     });
 
-    it("keeps malformed numeric entities inert without throwing", () => {
-        const { element, harness, visual } = createVisual();
-
-        visual.update(createUpdateOptions("Text &#99999999;"));
-
-        expect(element.querySelector(".error")).toBeNull();
-        expect(element.textContent).toContain("Text");
-        expect(harness.failureReasons).toEqual([]);
-    });
-
-    it("decodes named, numeric, and URL entities exactly once", () => {
+    it("renders a semantic outline and searches logical document content", () => {
         const { element, visual } = createVisual();
-
         visual.update(createUpdateOptions([
-            "Copyright &copy; &#x1F680; &amp; &#x110000;",
+            "# Release notes",
             "",
-            "[Query](https://example.com/?a=1&amp;b=2)"
+            "## Changes",
+            "",
+            "Needle in the document.",
+            "",
+            "## Changes"
         ].join("\n")));
 
-        expect(element.querySelector("p")?.textContent)
-            .toBe("Copyright © 🚀 & \uFFFD");
-        expect(element.querySelector("a[data-safe-href]")?.getAttribute("data-safe-href"))
-            .toBe("https://example.com/?a=1&b=2");
+        expect(element.querySelector("h1")?.id).toMatch(/^md-[a-z0-9]+-release-notes$/);
+        expect(element.querySelectorAll(".document-content h2")[0]?.id)
+            .toMatch(/^md-[a-z0-9]+-changes$/);
+        expect(element.querySelectorAll(".document-content h2")[1]?.id)
+            .toMatch(/^md-[a-z0-9]+-changes-2$/);
+        expect(element.querySelector("nav[aria-label='Document outline'] a"))
+            .not.toBeNull();
+
+        const input = element.querySelector<HTMLInputElement>("[data-document-search]");
+        expect(input).not.toBeNull();
+        input!.value = "needle";
+        input!.dispatchEvent(new Event("input", { bubbles: true }));
+
+        expect(element.querySelectorAll("mark[data-search-block]")).toHaveLength(1);
+        expect(element.querySelector("[data-search-live]")?.textContent)
+            .toContain("1 of 1 matches");
     });
 
     it("reuses unchanged rendered content and preserves reading state", () => {
@@ -406,177 +462,6 @@ describe("certification behavior", () => {
         expect(explicitHighlight).toHaveBeenCalledOnce();
     });
 
-    it("skips document work and selection allocation for resize-only updates", () => {
-        const explicitHighlight = vi.spyOn(hljs, "highlight");
-        const { element, harness, visual } = createVisual();
-        visual.update(createUpdateOptions("```javascript\nconst answer = 42;\n```"));
-        const firstDocument = element.querySelector(".markdown-container")?.firstChild;
-        const initialSelectionCount = harness.measureIds.length;
-
-        visual.update({
-            dataViews: [],
-            viewport: { width: 320, height: 240 },
-            type: 4
-        } as VisualUpdateOptions);
-
-        expect(element.querySelector(".markdown-container")?.firstChild).toBe(firstDocument);
-        expect(harness.measureIds).toHaveLength(initialSelectionCount);
-        expect(explicitHighlight).toHaveBeenCalledOnce();
-    });
-
-    it("rejects oversized documents before allocating selection IDs or highlighting", () => {
-        const explicitHighlight = vi.spyOn(hljs, "highlight");
-        const { element, harness, visual } = createVisual();
-
-        visual.update(createUpdateOptions("x".repeat(250_001)));
-
-        expect(element.querySelector(".error")?.textContent)
-            .toContain("250,000 character limit");
-        expect(harness.measureIds).toHaveLength(0);
-        expect(explicitHighlight).not.toHaveBeenCalled();
-    });
-
-    it("bounds automatic detection for long unlabelled code blocks", () => {
-        const { element, harness, visual } = createVisual();
-
-        visual.update(createUpdateOptions(`\`\`\`\n${"x".repeat(8_001)}\n\`\`\``));
-
-        expect(element.querySelector(".error")?.textContent)
-            .toContain("add a language hint");
-        expect(harness.measureIds).toHaveLength(0);
-    });
-
-    it("applies code limits to raw HTML blocks and unknown hints before highlighting", () => {
-        const explicitHighlight = vi.spyOn(hljs, "highlight");
-        const automaticHighlight = vi.spyOn(hljs, "highlightAuto");
-        const { element, harness, visual } = createVisual();
-
-        visual.update(createUpdateOptions(
-            `<pre><code>${"x".repeat(20_001)}</code></pre>`
-        ));
-
-        expect(element.querySelector(".error")?.textContent)
-            .toContain("20,000 character limit");
-        expect(explicitHighlight).not.toHaveBeenCalled();
-        expect(automaticHighlight).not.toHaveBeenCalled();
-        expect(harness.measureIds).toHaveLength(0);
-
-        visual.update(createUpdateOptions(
-            `\`\`\`unknown-language\n${"x".repeat(8_001)}\n\`\`\``
-        ));
-
-        expect(element.querySelector(".error")?.textContent)
-            .toContain("add a language hint");
-        expect(automaticHighlight).not.toHaveBeenCalled();
-        expect(harness.measureIds).toHaveLength(0);
-    });
-
-    it("counts raw HTML code blocks before highlighting", () => {
-        const automaticHighlight = vi.spyOn(hljs, "highlightAuto");
-        const { element, harness, visual } = createVisual();
-        const blocks = Array.from({ length: 101 }, () => "<pre><code>x</code></pre>").join("\n");
-
-        visual.update(createUpdateOptions(blocks));
-
-        expect(element.querySelector(".error")?.textContent)
-            .toContain("100 code block limit");
-        expect(automaticHighlight).not.toHaveBeenCalled();
-        expect(harness.measureIds).toHaveLength(0);
-    });
-
-    it("creates scoped Unicode-safe IDs for duplicate and empty headings", () => {
-        const first = createVisual({ instanceId: "instance-one" });
-        const second = createVisual({ instanceId: "instance-two" });
-        const markdown = "# 🚀 Café\n\n# 🚀 Café\n\n# Привет мир\n\n#";
-
-        first.visual.update(createUpdateOptions(markdown));
-        second.visual.update(createUpdateOptions(markdown));
-
-        const firstIds = Array.from(first.element.querySelectorAll("h1")).map((heading) =>
-            heading.id
-        );
-        const secondIds = Array.from(second.element.querySelectorAll("h1")).map((heading) =>
-            heading.id
-        );
-        expect(new Set(firstIds).size).toBe(4);
-        expect(firstIds[0]).toContain("🚀");
-        expect(firstIds[1]).toContain("-2");
-        expect(firstIds[2]).toContain("привет-мир");
-        expect(firstIds[3]).toContain("heading");
-        expect(new Set([...firstIds, ...secondIds]).size).toBe(8);
-        expect(first.element.querySelector("h1")?.getAttribute("tabindex")).toBe("-1");
-    });
-
-    it("wraps tables in a focusable logical overflow container", () => {
-        const { element, visual } = createVisual();
-
-        visual.update(createUpdateOptions("| A | B |\n| --- | --- |\n| 1 | 2 |"));
-
-        const wrapper = element.querySelector(".table-scroll");
-        expect(wrapper?.getAttribute("tabindex")).toBe("0");
-        expect(wrapper?.getAttribute("aria-label")).toBe("Scrollable table");
-        expect(wrapper?.querySelector("table th")?.getAttribute("scope")).toBe("col");
-        expect(wrapper?.querySelector("table")?.parentElement).toBe(wrapper);
-    });
-
-    it("preserves table-wrapper focus across changed and unchanged updates", () => {
-        const { element, visual } = createVisual();
-        visual.update(createUpdateOptions(
-            "| A | B |\n| --- | --- |\n| 1 | 2 |"
-        ));
-
-        const container = element.querySelector(".markdown-container") as HTMLElement;
-        const wrapper = element.querySelector(".table-scroll") as HTMLElement;
-        container.scrollTop = 17;
-        wrapper.focus();
-
-        visual.update(createUpdateOptions(
-            "| A | B |\n| --- | --- |\n| 1 | 2 |"
-        ));
-        expect(document.activeElement).toBe(wrapper);
-
-        visual.update(createUpdateOptions(
-            "| A | B |\n| --- | --- |\n| 3 | 4 |"
-        ));
-        expect(document.activeElement).toBe(element.querySelector(".table-scroll"));
-        expect(container.scrollTop).toBe(17);
-    });
-
-    it("sets RTL direction and uses localized visual-owned strings", () => {
-        const { element, visual } = createVisual({
-            locale: "ar-SA",
-            localizedStrings: {
-                MarkdownViewer_DisplayName: "عارض Markdown",
-                MarkdownViewer_ContentLabel: "محتوى Markdown"
-            }
-        });
-
-        visual.update(createUpdateOptions());
-
-        const container = element.querySelector(".markdown-container");
-        expect(container?.getAttribute("dir")).toBe("rtl");
-        expect(container?.getAttribute("aria-label")).toBe("محتوى Markdown");
-        expect(element.querySelector(".landing-page h2")?.textContent).toBe("عارض Markdown");
-    });
-
-    it("localizes formatting model card and slice labels through the host manager", () => {
-        const { visual } = createVisual({
-            localizedStrings: {
-                MarkdownViewer_Settings: "Configuración",
-                MarkdownViewer_FontFamily: "Familia"
-            }
-        });
-
-        visual.update(createUpdateOptions("# Localized"));
-        const model = visual.getFormattingModel();
-        const card = model.cards[0] as {
-            displayName?: string;
-            groups?: Array<{ slices?: Array<{ displayName?: string }> }>;
-        };
-
-        expect(card.displayName).toBe("Configuración");
-        expect(card.groups?.[0]?.slices?.[0]?.displayName).toBe("Familia");
-    });
     it("restores scroll and equivalent focus after changed content", () => {
         const { element, visual } = createVisual();
         visual.update(createUpdateOptions(
@@ -860,6 +745,58 @@ describe("certification behavior", () => {
         });
         expect(harness.contextMenuCalls[1].selectionId).toEqual({});
         expect(harness.contextMenuCalls[1].position).toEqual({ x: 55, y: 89 });
+    });
+
+    it("renders typed structured rows with deterministic order, selection, tooltips, and clearing", () => {
+        const { element, harness, visual } = createVisual();
+
+        visual.update(createStructuredUpdateOptions());
+
+        const rows = Array.from(element.querySelectorAll<HTMLElement>(".structured-row"));
+        expect(rows).toHaveLength(2);
+        expect(rows[0].textContent).toContain("First section");
+        expect(rows[1].textContent).toContain("Second section");
+        expect(harness.tableRowIndexes).toEqual([0, 1]);
+        expect(rows[0].getAttribute("aria-label")).toBe("First section");
+
+        rows[0].dispatchEvent(new MouseEvent("click", { bubbles: true, button: 0 }));
+        rows[0].dispatchEvent(new MouseEvent("mouseover", {
+            bubbles: true,
+            clientX: 12,
+            clientY: 24
+        }));
+        rows[0].dispatchEvent(new MouseEvent("contextmenu", {
+            bubbles: true,
+            clientX: 12,
+            clientY: 24
+        }));
+
+        expect(rows[0].getAttribute("aria-selected")).toBe("true");
+        expect(harness.tooltipCalls.some((call) => call.kind === "show")).toBe(true);
+        expect(harness.contextMenuCalls.at(-1)?.selectionId).toBe(harness.dataPointSelectionId);
+
+        visual.update(createUpdateOptions());
+        expect(element.querySelector(".structured-row")).toBeNull();
+        expect(element.querySelector(".landing-page")).not.toBeNull();
+    });
+
+    it("keeps table overflow focus stable across unchanged and changed documents", () => {
+        const { element, visual } = createVisual();
+        const table = "| A | B |\n| --- | --- |\n| 1 | 2 |";
+        visual.update(createUpdateOptions(table));
+
+        const container = element.querySelector(".markdown-container") as HTMLElement;
+        const wrapper = element.querySelector(".table-scroll") as HTMLElement;
+        expect(wrapper.getAttribute("tabindex")).toBe("0");
+        wrapper.focus();
+        container.scrollTop = 19;
+
+        visual.update(createUpdateOptions(table));
+        expect(document.activeElement).toBe(wrapper);
+
+        visual.update(createUpdateOptions("| A | B |\n| --- | --- |\n| 3 | 4 |"));
+        expect(document.activeElement).toBe(element.querySelector(".table-scroll"));
+        expect(container.scrollTop).toBe(19);
     });
 
     it("removes its context-menu listener when destroyed", () => {

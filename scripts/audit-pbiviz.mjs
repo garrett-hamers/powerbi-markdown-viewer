@@ -10,7 +10,7 @@ const executablePatterns = [
     { name: "XMLHttpRequest", pattern: /\bXMLHttpRequest\b/gi },
     { name: "WebSocket", pattern: /\bWebSocket\b/gi },
     { name: "eval", pattern: /\beval\s*\(/gi },
-    { name: "Function constructor", pattern: /\b(?:new\s+)?Function\s*\(/gi },
+    { name: "Function constructor", pattern: /\b(?:new\s+)?Function\s*\(/g },
     { name: "dynamic import", pattern: /\bimport\s*\(/gi }
 ];
 

@@ -1,6 +1,5 @@
 {
-    "MarkdownViewer_DisplayName": "Visor de Markdown de Atlyn",
-    "MarkdownViewer_MarkdownContent": "Contenido Markdown",
+    "MarkdownViewer_DisplayName": "Documento de Atlyn",
     "MarkdownViewer_Settings": "Configuración de Markdown",
     "MarkdownViewer_FontFamily": "Familia de fuentes",
     "MarkdownViewer_FontSize": "Tamaño de fuente",
@@ -9,17 +8,13 @@
     "MarkdownViewer_Padding": "Relleno",
     "MarkdownViewer_ShowBorder": "Mostrar borde",
     "MarkdownViewer_ContentLabel": "Contenido Markdown",
-    "MarkdownViewer_UnsupportedLinkReason": "Solo se pueden abrir enlaces HTTPS absolutos.",
-    "MarkdownViewer_UnsupportedLink": "enlace no compatible",
-    "MarkdownViewer_OpenLink": "Abrir enlace HTTPS a {0}",
     "MarkdownViewer_ScrollableTable": "Tabla desplazable",
-    "MarkdownViewer_LanguageCodeBlock": "Bloque de código {0}",
-    "MarkdownViewer_CodeBlock": "Bloque de código",
     "MarkdownViewer_AddMeasure": "Agregue una medida que contenga texto Markdown.",
-    "MarkdownViewer_SupportedFeatures": "Admite encabezados, listas, tablas, bloques de código y códigos cortos de emoji.",
-    "MarkdownViewer_Error": "Error",
-    "MarkdownViewer_DocumentTooLong": "El documento supera el límite de {0} caracteres.",
-    "MarkdownViewer_TooManyCodeBlocks": "El documento supera el límite de {0} bloques de código.",
-    "MarkdownViewer_CodeBlockTooLong": "Un bloque de código supera el límite de {0} caracteres.",
-    "MarkdownViewer_AutoDetectTooLong": "La detección automática de código está limitada a {0} caracteres; agregue una sugerencia de idioma."
+    "MarkdownViewer_SupportedFeatures": "Admite encabezados semánticos, navegación de esquema, búsqueda local, tablas, código y enlaces HTTPS seguros.",
+    "MarkdownViewer_DocumentSettings": "Experiencia del documento",
+    "MarkdownViewer_ShowOutline": "Mostrar esquema",
+    "MarkdownViewer_ShowSearch": "Mostrar búsqueda",
+    "MarkdownViewer_ShowTrustStatus": "Mostrar estado de confianza",
+    "MarkdownViewer_CompactMode": "Presentación compacta / exportación",
+    "MarkdownViewer_ReducedMotion": "Reducir movimiento"
 }
