@@ -10,17 +10,22 @@ const executablePatterns = [
     { name: "XMLHttpRequest", pattern: /\bXMLHttpRequest\b/gi },
     { name: "WebSocket", pattern: /\bWebSocket\b/gi },
     { name: "eval", pattern: /\beval\s*\(/gi },
-    { name: "Function constructor", pattern: /\bnew\s+Function\s*\(/gi },
+    { name: "Function constructor", pattern: /\b(?:new\s+)?Function\s*\(/gi },
     { name: "dynamic import", pattern: /\bimport\s*\(/gi }
 ];
 
-function stripCommentsAndLiterals(source) {
+function stripJavaScriptSegment(source, startIndex = 0, stopAtBrace = false) {
     let output = "";
-    let index = 0;
+    let index = startIndex;
+    let braceDepth = 0;
 
     while (index < source.length) {
         const character = source[index];
         const next = source[index + 1];
+
+        if (stopAtBrace && character === "}" && braceDepth === 0) {
+            return { output, index: index + 1 };
+        }
 
         if (character === "/" && next === "/") {
             index += 2;
@@ -44,6 +49,27 @@ function stripCommentsAndLiterals(source) {
         if (character === "'" || character === "\"" || character === "`") {
             const quote = character;
             index += 1;
+            if (quote === "`") {
+                output += " ";
+                while (index < source.length) {
+                    if (source[index] === "\\") {
+                        index += 2;
+                        continue;
+                    }
+                    if (source[index] === "`") {
+                        index += 1;
+                        break;
+                    }
+                    if (source[index] === "$" && source[index + 1] === "{") {
+                        const interpolation = stripJavaScriptSegment(source, index + 2, true);
+                        output += interpolation.output;
+                        index = interpolation.index;
+                        continue;
+                    }
+                    index += 1;
+                }
+                continue;
+            }
             while (index < source.length) {
                 if (source[index] === "\\") {
                     index += 2;
@@ -59,11 +85,20 @@ function stripCommentsAndLiterals(source) {
             continue;
         }
 
+        if (stopAtBrace && character === "{") {
+            braceDepth += 1;
+        } else if (stopAtBrace && character === "}") {
+            braceDepth -= 1;
+        }
         output += character;
         index += 1;
     }
 
-    return output;
+    return { output, index };
+}
+
+function stripCommentsAndLiterals(source) {
+    return stripJavaScriptSegment(source).output;
 }
 
 export function findForbiddenSinks(source) {

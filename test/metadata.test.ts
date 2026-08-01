@@ -139,6 +139,7 @@ describe("certification metadata", () => {
     it("declares only the supported single-measure contract", () => {
         expect(capabilities.dataRoles).toEqual([{
             displayName: "Markdown Content",
+            displayNameKey: "MarkdownViewer_MarkdownContent",
             name: "markdownContent",
             kind: "Measure"
         }]);

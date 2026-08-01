@@ -2,6 +2,7 @@
     "dataRoles": [
         {
             "displayName": "Markdown Content",
+            "displayNameKey": "MarkdownViewer_MarkdownContent",
             "name": "markdownContent",
             "kind": "Measure"
         }

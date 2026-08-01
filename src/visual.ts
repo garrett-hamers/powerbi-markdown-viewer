@@ -7,6 +7,7 @@
 import powerbi from "powerbi-visuals-api";
 import { FormattingSettingsService } from "powerbi-visuals-utils-formattingmodel";
 import { marked } from "marked";
+import { decodeHTML, decodeHTMLAttribute } from "entities";
 import hljs from "highlight.js/lib/core";
 import javascript from "highlight.js/lib/languages/javascript";
 import typescript from "highlight.js/lib/languages/typescript";
@@ -41,7 +42,7 @@ const DEFAULT_FONT_SIZE = 14;
 const DEFAULT_PADDING = 20;
 const DEFAULT_TEXT_COLOR = "#111827";
 const FOCUSABLE_CONTENT_SELECTOR =
-    "a[data-safe-href], summary, pre[tabindex], h1[id], h2[id], h3[id], h4[id], h5[id], h6[id]";
+    "a[data-safe-href], summary, pre[tabindex], .table-scroll[tabindex], h1[id], h2[id], h3[id], h4[id], h5[id], h6[id]";
 const UNSUPPORTED_LINK_REASON = "Only absolute HTTPS links can be opened.";
 const MAX_DOCUMENT_LENGTH = 250_000;
 const MAX_CODE_BLOCKS = 100;
@@ -156,7 +157,7 @@ export class Visual implements IVisual {
             ? this.host.createLocalizationManager()
             : undefined;
         this.instancePrefix = this.createInstancePrefix(this.host.instanceId);
-        this.formattingSettingsService = new FormattingSettingsService();
+        this.formattingSettingsService = new FormattingSettingsService(this.localizationManager);
         
         this.container = document.createElement("div");
         this.container.className = "markdown-container";
@@ -230,9 +231,10 @@ export class Visual implements IVisual {
         }
 
         this.validateDocumentLimits(markdownContent);
+        const safeFragment = this.createSafeFragment(markdownContent);
+        this.validateCodeBlockLimits(safeFragment);
         this.currentSelectionId = this.createMeasureSelectionId(dataView);
         const readingState = this.captureReadingState();
-        const safeFragment = this.createSafeFragment(markdownContent);
 
         this.processTextEmojis(safeFragment);
         this.prepareSafeLinks(safeFragment);
@@ -304,7 +306,7 @@ export class Visual implements IVisual {
                 if (nestedTokens.length > 0) {
                     this.renderInlineTokens(nestedTokens, paragraph);
                 } else {
-                    paragraph.textContent = this.getTokenText(token);
+                    paragraph.textContent = this.decodeHighlightText(this.getTokenText(token));
                 }
                 parent.appendChild(paragraph);
                 return;
@@ -334,7 +336,7 @@ export class Visual implements IVisual {
                     if (itemTokens.length > 0) {
                         this.renderBlockOrInlineTokens(itemTokens, listItem);
                     } else {
-                        listItem.textContent = this.getTokenText(item.text);
+                        listItem.textContent = this.decodeHighlightText(this.getTokenText(item.text));
                     }
                     list.appendChild(listItem);
                 });
@@ -431,7 +433,7 @@ export class Visual implements IVisual {
                     }
                     this.renderInlineTokens(childTokens, link);
                     if (link.childNodes.length === 0) {
-                        link.textContent = this.getTokenText(token.text);
+                        link.textContent = this.decodeHighlightText(this.getTokenText(token.text));
                     }
                     parent.appendChild(link);
                     break;
@@ -439,7 +441,9 @@ export class Visual implements IVisual {
                 case "autolink": {
                     const link = document.createElement("a");
                     link.setAttribute("href", this.getTokenText(token.href));
-                    link.textContent = this.getTokenText(token.text) || this.getTokenText(token.href);
+                    link.textContent = this.decodeHighlightText(
+                        this.getTokenText(token.text) || this.getTokenText(token.href)
+                    );
                     parent.appendChild(link);
                     break;
                 }
@@ -480,7 +484,7 @@ export class Visual implements IVisual {
         if (childTokens.length > 0) {
             this.renderInlineTokens(childTokens, element);
         } else {
-            element.textContent = this.getTokenText(text);
+            element.textContent = this.decodeHighlightText(this.getTokenText(text));
         }
         parent.appendChild(element);
     }
@@ -554,7 +558,8 @@ export class Visual implements IVisual {
             const isCodeClass = name === "class"
                 && element.tagName.toLowerCase() === "code";
             if (allowedAttributes.has(name) || isCodeClass) {
-                element.setAttribute(name, match[2] ?? match[3] ?? match[4] ?? "");
+                const value = match[2] ?? match[3] ?? match[4] ?? "";
+                element.setAttribute(name, value);
             }
         }
     }
@@ -636,35 +641,7 @@ export class Visual implements IVisual {
     }
 
     private decodeHighlightText(value: string): string {
-        return value.replace(
-            /&(#x[0-9a-f]+|#\d+|amp|lt|gt|quot|apos|nbsp);/gi,
-            (entity, value: string) => {
-                if (value.toLowerCase() === "amp") {
-                    return "&";
-                }
-                if (value.toLowerCase() === "lt") {
-                    return "<";
-                }
-                if (value.toLowerCase() === "gt") {
-                    return ">";
-                }
-                if (value.toLowerCase() === "quot") {
-                    return "\"";
-                }
-                if (value.toLowerCase() === "apos") {
-                    return "'";
-                }
-                if (value.toLowerCase() === "nbsp") {
-                    return "\u00a0";
-                }
-                const codePoint = value.toLowerCase().startsWith("#x")
-                    ? Number.parseInt(value.slice(2), 16)
-                    : Number.parseInt(value.slice(1), 10);
-                return Number.isFinite(codePoint) && codePoint > 0 && codePoint <= 0x10FFFF
-                    ? String.fromCodePoint(codePoint)
-                    : entity;
-            }
-        );
+        return decodeHTML(value);
     }
 
     private restrictInputClasses(root: ParentNode): void {
@@ -772,7 +749,7 @@ export class Visual implements IVisual {
 
     private getSafeHttpsUrl(rawUrl: string): string | undefined {
         try {
-            const url = new URL(rawUrl.trim());
+            const url = new URL(decodeHTMLAttribute(rawUrl.trim()));
             return url.protocol === "https:" ? url.href : undefined;
         } catch {
             return undefined;
@@ -851,49 +828,31 @@ export class Visual implements IVisual {
                 `Document exceeds the ${MAX_DOCUMENT_LENGTH.toLocaleString(this.locale)} character limit.`
             ).replace("{0}", MAX_DOCUMENT_LENGTH.toLocaleString(this.locale)));
         }
+    }
 
-        let codeBlockCount = 0;
-        let fenceCharacter = "";
-        let fenceLength = 0;
-        let codeLength = 0;
-        let autoDetect = false;
+    private validateCodeBlockLimits(root: ParentNode): void {
+        const codeBlocks = Array.from(root.querySelectorAll("pre"));
+        if (codeBlocks.length > MAX_CODE_BLOCKS) {
+            throw new Error(this.localized(
+                "MarkdownViewer_TooManyCodeBlocks",
+                "Document exceeds the {0} code block limit."
+            ).replace("{0}", MAX_CODE_BLOCKS.toLocaleString(this.locale)));
+        }
 
-        for (const line of markdownContent.split(/\r?\n/)) {
-            const fence = /^\s{0,3}(`{3,}|~{3,})(.*)$/.exec(line);
-            if (!fenceCharacter && fence) {
-                codeBlockCount += 1;
-                if (codeBlockCount > MAX_CODE_BLOCKS) {
-                    throw new Error(this.localized(
-                        "MarkdownViewer_TooManyCodeBlocks",
-                        `Document exceeds the ${MAX_CODE_BLOCKS} code block limit.`
-                    ).replace("{0}", String(MAX_CODE_BLOCKS)));
-                }
-                fenceCharacter = fence[1][0];
-                fenceLength = fence[1].length;
-                codeLength = 0;
-                const language = fence[2].trim().split(/\s+/, 1)[0];
-                autoDetect = !language;
-                continue;
+        for (const pre of codeBlocks) {
+            const code = pre.querySelector("code") ?? pre;
+            const sourceLength = (code.textContent ?? "").length;
+            if (sourceLength > MAX_CODE_LENGTH) {
+                throw new Error(this.localized(
+                    "MarkdownViewer_CodeBlockTooLong",
+                    "A code block exceeds the {0} character limit."
+                ).replace("{0}", MAX_CODE_LENGTH.toLocaleString(this.locale)));
             }
-
-            if (fenceCharacter) {
-                if (fence && fence[1][0] === fenceCharacter && fence[1].length >= fenceLength) {
-                    fenceCharacter = "";
-                    continue;
-                }
-                codeLength += line.length + 1;
-                if (codeLength > MAX_CODE_LENGTH) {
-                    throw new Error(this.localized(
-                        "MarkdownViewer_CodeBlockTooLong",
-                        `A code block exceeds the ${MAX_CODE_LENGTH} character limit.`
-                    ).replace("{0}", String(MAX_CODE_LENGTH)));
-                }
-                if (autoDetect && codeLength > MAX_AUTO_DETECT_LENGTH) {
-                    throw new Error(this.localized(
-                        "MarkdownViewer_AutoDetectTooLong",
-                        `Automatic code detection is limited to ${MAX_AUTO_DETECT_LENGTH} characters; add a language hint.`
-                    ).replace("{0}", String(MAX_AUTO_DETECT_LENGTH)));
-                }
+            if (!this.getValidatedLanguage(code) && sourceLength > MAX_AUTO_DETECT_LENGTH) {
+                throw new Error(this.localized(
+                    "MarkdownViewer_AutoDetectTooLong",
+                    "Automatic code detection is limited to {0} characters; add a language hint."
+                ).replace("{0}", MAX_AUTO_DETECT_LENGTH.toLocaleString(this.locale)));
             }
         }
     }
@@ -930,6 +889,12 @@ export class Visual implements IVisual {
         }
         if (element.matches("summary")) {
             return `summary:${element.textContent ?? ""}`;
+        }
+        if (element.matches(".table-scroll[tabindex]")) {
+            const headers = Array.from(element.querySelectorAll("th"))
+                .map((header) => header.textContent?.trim() ?? "")
+                .join("|");
+            return `table:${headers}`;
         }
         if (/^h[1-6]$/i.test(element.tagName)) {
             return `heading:${element.getAttribute("id") ?? ""}`;

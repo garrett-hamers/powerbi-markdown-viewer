@@ -50,5 +50,12 @@ describe("certification dependency audit", () => {
         expect(findForbiddenSinks("const value = fetch('/data');")).toEqual([
             expect.objectContaining({ name: "fetch request" })
         ]);
+        expect(findForbiddenSinks("const value = Function('return 1');")).toEqual([
+            expect.objectContaining({ name: "Function constructor" })
+        ]);
+        expect(findForbiddenSinks("const value = `safe ${fetch('/data')}`;")).toEqual([
+            expect.objectContaining({ name: "fetch request" })
+        ]);
+        expect(findForbiddenSinks("const value = `fetch() and Function()`;")).toEqual([]);
     });
 });

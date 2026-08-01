@@ -363,6 +363,21 @@ describe("certification behavior", () => {
         expect(harness.failureReasons).toEqual([]);
     });
 
+    it("decodes named, numeric, and URL entities exactly once", () => {
+        const { element, visual } = createVisual();
+
+        visual.update(createUpdateOptions([
+            "Copyright &copy; &#x1F680; &amp; &#x110000;",
+            "",
+            "[Query](https://example.com/?a=1&amp;b=2)"
+        ].join("\n")));
+
+        expect(element.querySelector("p")?.textContent)
+            .toBe("Copyright © 🚀 & \uFFFD");
+        expect(element.querySelector("a[data-safe-href]")?.getAttribute("data-safe-href"))
+            .toBe("https://example.com/?a=1&b=2");
+    });
+
     it("reuses unchanged rendered content and preserves reading state", () => {
         const explicitHighlight = vi.spyOn(hljs, "highlight");
         const { element, visual } = createVisual();
@@ -431,6 +446,44 @@ describe("certification behavior", () => {
         expect(harness.measureIds).toHaveLength(0);
     });
 
+    it("applies code limits to raw HTML blocks and unknown hints before highlighting", () => {
+        const explicitHighlight = vi.spyOn(hljs, "highlight");
+        const automaticHighlight = vi.spyOn(hljs, "highlightAuto");
+        const { element, harness, visual } = createVisual();
+
+        visual.update(createUpdateOptions(
+            `<pre><code>${"x".repeat(20_001)}</code></pre>`
+        ));
+
+        expect(element.querySelector(".error")?.textContent)
+            .toContain("20,000 character limit");
+        expect(explicitHighlight).not.toHaveBeenCalled();
+        expect(automaticHighlight).not.toHaveBeenCalled();
+        expect(harness.measureIds).toHaveLength(0);
+
+        visual.update(createUpdateOptions(
+            `\`\`\`unknown-language\n${"x".repeat(8_001)}\n\`\`\``
+        ));
+
+        expect(element.querySelector(".error")?.textContent)
+            .toContain("add a language hint");
+        expect(automaticHighlight).not.toHaveBeenCalled();
+        expect(harness.measureIds).toHaveLength(0);
+    });
+
+    it("counts raw HTML code blocks before highlighting", () => {
+        const automaticHighlight = vi.spyOn(hljs, "highlightAuto");
+        const { element, harness, visual } = createVisual();
+        const blocks = Array.from({ length: 101 }, () => "<pre><code>x</code></pre>").join("\n");
+
+        visual.update(createUpdateOptions(blocks));
+
+        expect(element.querySelector(".error")?.textContent)
+            .toContain("100 code block limit");
+        expect(automaticHighlight).not.toHaveBeenCalled();
+        expect(harness.measureIds).toHaveLength(0);
+    });
+
     it("creates scoped Unicode-safe IDs for duplicate and empty headings", () => {
         const first = createVisual({ instanceId: "instance-one" });
         const second = createVisual({ instanceId: "instance-two" });
@@ -466,6 +519,29 @@ describe("certification behavior", () => {
         expect(wrapper?.querySelector("table")?.parentElement).toBe(wrapper);
     });
 
+    it("preserves table-wrapper focus across changed and unchanged updates", () => {
+        const { element, visual } = createVisual();
+        visual.update(createUpdateOptions(
+            "| A | B |\n| --- | --- |\n| 1 | 2 |"
+        ));
+
+        const container = element.querySelector(".markdown-container") as HTMLElement;
+        const wrapper = element.querySelector(".table-scroll") as HTMLElement;
+        container.scrollTop = 17;
+        wrapper.focus();
+
+        visual.update(createUpdateOptions(
+            "| A | B |\n| --- | --- |\n| 1 | 2 |"
+        ));
+        expect(document.activeElement).toBe(wrapper);
+
+        visual.update(createUpdateOptions(
+            "| A | B |\n| --- | --- |\n| 3 | 4 |"
+        ));
+        expect(document.activeElement).toBe(element.querySelector(".table-scroll"));
+        expect(container.scrollTop).toBe(17);
+    });
+
     it("sets RTL direction and uses localized visual-owned strings", () => {
         const { element, visual } = createVisual({
             locale: "ar-SA",
@@ -483,6 +559,24 @@ describe("certification behavior", () => {
         expect(element.querySelector(".landing-page h2")?.textContent).toBe("عارض Markdown");
     });
 
+    it("localizes formatting model card and slice labels through the host manager", () => {
+        const { visual } = createVisual({
+            localizedStrings: {
+                MarkdownViewer_Settings: "Configuración",
+                MarkdownViewer_FontFamily: "Familia"
+            }
+        });
+
+        visual.update(createUpdateOptions("# Localized"));
+        const model = visual.getFormattingModel();
+        const card = model.cards[0] as {
+            displayName?: string;
+            groups?: Array<{ slices?: Array<{ displayName?: string }> }>;
+        };
+
+        expect(card.displayName).toBe("Configuración");
+        expect(card.groups?.[0]?.slices?.[0]?.displayName).toBe("Familia");
+    });
     it("restores scroll and equivalent focus after changed content", () => {
         const { element, visual } = createVisual();
         visual.update(createUpdateOptions(
