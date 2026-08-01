@@ -660,7 +660,7 @@ export class Visual implements IVisual {
                 const codePoint = value.toLowerCase().startsWith("#x")
                     ? Number.parseInt(value.slice(2), 16)
                     : Number.parseInt(value.slice(1), 10);
-                return Number.isFinite(codePoint) && codePoint > 0
+                return Number.isFinite(codePoint) && codePoint > 0 && codePoint <= 0x10FFFF
                     ? String.fromCodePoint(codePoint)
                     : entity;
             }

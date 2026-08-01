@@ -353,6 +353,16 @@ describe("certification behavior", () => {
         expect(harness.eventCalls).toEqual(["started", "finished"]);
     });
 
+    it("keeps malformed numeric entities inert without throwing", () => {
+        const { element, harness, visual } = createVisual();
+
+        visual.update(createUpdateOptions("Text &#99999999;"));
+
+        expect(element.querySelector(".error")).toBeNull();
+        expect(element.textContent).toContain("Text");
+        expect(harness.failureReasons).toEqual([]);
+    });
+
     it("reuses unchanged rendered content and preserves reading state", () => {
         const explicitHighlight = vi.spyOn(hljs, "highlight");
         const { element, visual } = createVisual();
