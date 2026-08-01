@@ -914,10 +914,11 @@ export function createStructuredDocumentModel(
                 rowModel.blocks,
                 `row-${row.index}-${hashText(row.selectionKey ?? row.sectionKey)}`
             );
+            const retainedBlocks: DocumentBlock[] = [];
             for (const block of rowModel.blocks) {
                 const blockNodes = estimateBlockNodes(block);
                 if (
-                    blocks.length + countLogicalBlocks(block) > DOCUMENT_LIMITS.maxBlocks
+                    logicalBlockCount + countLogicalBlocks(block) > DOCUMENT_LIMITS.maxBlocks
                     || estimatedNodes + blockNodes > DOCUMENT_LIMITS.maxEstimatedNodes
                     || codeBlockCount + countCodeBlocks(block)
                         > DOCUMENT_LIMITS.maxCodeBlocks
@@ -926,20 +927,23 @@ export function createStructuredDocumentModel(
                     break;
                 }
                 blocks.push(block);
+                retainedBlocks.push(block);
                 logicalBlockCount += countLogicalBlocks(block);
                 estimatedNodes += blockNodes;
                 codeBlockCount += countCodeBlocks(block);
             }
-            rowModels.push(rowModel);
+            rowModels.push({
+                ...rowModel,
+                blocks: retainedBlocks,
+                searchIndex: collectSearchEntries(retainedBlocks),
+                stats: aggregateStats(retainedBlocks)
+            });
         });
     }
     if (budgetExhausted) {
         addDiagnostic(diagnostics, "block-limit");
     }
-    const headingCursor = { index: 0 };
-    rowModels.forEach((rowModel) => {
-        applyOutlineAnchors(rowModel.blocks, model.outline, headingCursor);
-    });
+    const retainedOutline = createRetainedOutline(blocks);
     const mergedDiagnostics = [
         ...model.diagnostics,
         ...createDiagnostics(diagnostics)
@@ -957,6 +961,7 @@ export function createStructuredDocumentModel(
     return {
         ...model,
         blocks,
+        outline: retainedOutline,
         searchIndex: collectSearchEntries(blocks),
         stats: aggregateStats(blocks),
         diagnostics: diagnosticsList,
@@ -973,25 +978,36 @@ export function createStructuredDocumentModel(
     };
 }
 
-function applyOutlineAnchors(
-    blocks: DocumentBlock[],
-    outline: OutlineEntry[],
-    cursor: { index: number }
-): void {
+function createRetainedOutline(blocks: DocumentBlock[]): OutlineEntry[] {
+    const usedIds = new Set<string>();
+    return collectHeadingBlocks(blocks).map((heading) => {
+        heading.anchorId = normalizedHeadingId(heading.text, usedIds);
+        return {
+            key: heading.key,
+            id: heading.anchorId,
+            level: heading.level,
+            text: heading.text
+        };
+    });
+}
+
+function collectHeadingBlocks(blocks: DocumentBlock[]): Array<Extract<DocumentBlock, { type: "heading" }>> {
+    const headings: Array<Extract<DocumentBlock, { type: "heading" }>> = [];
     blocks.forEach((block) => {
         if (block.type === "heading") {
-            block.anchorId = outline[cursor.index]?.id ?? block.anchorId;
-            cursor.index += 1;
+            headings.push(block);
         }
-
         if (block.type === "quote" || block.type === "disclosure") {
-            applyOutlineAnchors(block.children, outline, cursor);
+            headings.push(...collectHeadingBlocks(block.children));
         } else if (block.type === "list") {
             block.items.forEach((item) => {
-                item.nested?.forEach((nested) => applyOutlineAnchors([nested], outline, cursor));
+                item.nested?.forEach((nested) => {
+                    headings.push(...collectHeadingBlocks([nested]));
+                });
             });
         }
     });
+    return headings;
 }
 
 function prefixBlockIdentity(blocks: DocumentBlock[], prefix: string): void {

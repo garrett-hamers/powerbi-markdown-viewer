@@ -189,4 +189,42 @@ describe("semantic document model", () => {
             )
             : false).toBe(true);
     });
+
+    it("bounds nested aggregate blocks and excludes omitted headings from the outline", () => {
+        const body = Array.from(
+            { length: 1499 },
+            (_, index) => `### Nested heading ${index}\n\nText ${index}`
+        ).join("\n\n");
+        const model = createStructuredDocumentModel([
+            {
+                index: 0,
+                sectionKey: "first",
+                title: "First",
+                body,
+                kind: "paragraph",
+                status: "unknown",
+                order: 0,
+                selectionKey: "first"
+            },
+            {
+                index: 1,
+                sectionKey: "second",
+                title: "Second",
+                body,
+                kind: "paragraph",
+                status: "unknown",
+                order: 1,
+                selectionKey: "second"
+            }
+        ], emojiMap, 2);
+        const headingCount = model.blocks.reduce(
+            (count, block) => count + (block.type === "heading" ? 1 : 0),
+            0
+        );
+
+        expect(model.stats.blockCount).toBeLessThanOrEqual(DOCUMENT_LIMITS.maxBlocks);
+        expect(model.outline).toHaveLength(headingCount);
+        expect(new Set(model.outline.map((entry) => entry.id)).size)
+            .toBe(model.outline.length);
+    });
 });
