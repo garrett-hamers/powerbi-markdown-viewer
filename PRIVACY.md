@@ -1,6 +1,6 @@
 # Privacy Policy
 
-## Atlyn Markdown Viewer for Power BI
+## Atlyn Document for Power BI
 
 **Effective Date:** February 2026
 
@@ -10,7 +10,8 @@ This Power BI custom visual does **not** collect, store, or automatically transm
 
 ### Data Processing
 
-- All markdown content is processed locally within the Power BI environment
+- All Markdown and structured section content is processed locally within the Power BI environment
+- Search indexes and trust/completeness diagnostics remain local and store category counts only
 - No data is automatically sent to external servers
 - No cookies or tracking mechanisms are used
 - No analytics or telemetry is collected

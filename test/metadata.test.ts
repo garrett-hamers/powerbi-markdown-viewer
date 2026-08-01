@@ -56,8 +56,8 @@ describe("certification metadata", () => {
     const capabilities = readJson("capabilities.json");
 
     it("keeps canonical name, version, API, and GUID aligned", () => {
-        expect(pbiviz.visual.displayName).toBe("Atlyn Markdown Viewer");
-        expect(pbiviz.visual.version).toBe("1.0.6.0");
+        expect(pbiviz.visual.displayName).toBe("Atlyn Document");
+        expect(pbiviz.visual.version).toBe("1.1.0.0");
         expect(packageManifest.version).toBe(pbiviz.visual.version);
         expect(packageLock.version).toBe(pbiviz.visual.version);
         expect(packageLock.packages[""].version).toBe(pbiviz.visual.version);
@@ -134,21 +134,51 @@ describe("certification metadata", () => {
         expect(capabilities.supportsEmptyDataView).toBe(true);
     });
 
-    it("declares only the supported single-measure contract", () => {
-        expect(capabilities.dataRoles).toEqual([{
+    it("preserves the single-measure contract and declares typed section roles", () => {
+        expect(capabilities.dataRoles[0]).toEqual({
             displayName: "Markdown Content",
             name: "markdownContent",
             kind: "Measure"
-        }]);
-        expect(capabilities.dataViewMappings).toEqual([{
+        });
+        expect(capabilities.dataRoles.map((role: { name: string }) => role.name)).toEqual([
+            "markdownContent",
+            "section",
+            "sectionOrder",
+            "sectionTitle",
+            "sectionBody",
+            "sectionKind",
+            "sectionValue",
+            "sectionStatus",
+            "sectionLink",
+            "tooltip"
+        ]);
+        expect(capabilities.dataViewMappings[0]).toEqual({
             conditions: [{
                 markdownContent: { max: 1 }
             }],
             single: { role: "markdownContent" }
-        }]);
+        });
+        expect(capabilities.dataViewMappings[1].table.rows.select.map(
+            (selection: { for: { in: string } }) => selection.for.in
+        )).toEqual([
+            "section",
+            "sectionOrder",
+            "sectionTitle",
+            "sectionBody",
+            "sectionKind",
+            "sectionValue",
+            "sectionStatus",
+            "sectionLink",
+            "tooltip"
+        ]);
         expect(capabilities.supportsHighlight).toBe(false);
+        expect(capabilities.supportsMultiVisualSelection).toBe(true);
         expect(capabilities.supportsKeyboardFocus).toBe(true);
         expect(capabilities.supportsLandingPage).toBe(true);
+        expect(capabilities.tooltips).toEqual({
+            supportedTypes: { default: true },
+            roles: ["tooltip"]
+        });
     });
 
     it("lets the host create a single data view only for zero or one measure", () => {
@@ -182,7 +212,8 @@ describe("certification metadata", () => {
     it("keeps application source free of forbidden dynamic and request APIs", () => {
         const source = [
             readText("src/settings.ts"),
-            readText("src/visual.ts")
+            readText("src/visual.ts"),
+            readText("src/documentModel.ts")
         ].join("\n");
         const forbiddenPatterns = [
             /\bXMLHttpRequest\b/,

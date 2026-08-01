@@ -35,6 +35,6 @@ describe("certification dependency audit", () => {
             high: 0,
             moderate: 0,
             total: 0
-        });
+        }, 30_000);
     });
 });

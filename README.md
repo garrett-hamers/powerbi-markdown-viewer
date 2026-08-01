@@ -1,6 +1,6 @@
-# Atlyn Markdown Viewer
+# Atlyn Document
 
-A custom Power BI visual that renders Markdown content directly in your reports with GitHub Flavored Markdown support, syntax highlighting, and emoji shortcodes.
+A certified-first Power BI document visual that renders safe Markdown and explicitly typed Power BI narratives with semantic structure, local search, outline navigation, and visible completeness diagnostics.
 
 ![Full Feature Preview](assets/FullFeature.png)
 
@@ -24,6 +24,12 @@ Convert emoji shortcodes like `:rocket:` to 🚀 — over 60 shortcodes supporte
 
 ![Emoji Support](assets/EmojiSupport.png)
 
+### 🧭 Document navigation and trust
+Every document is normalized into a bounded semantic model. Headings receive deterministic IDs and a keyboard-accessible outline; search indexes logical content rather than only visible DOM nodes. A status disclosure reports blocked content, unsafe links, size limits, and partial structured data by category and count without echoing source payloads.
+
+### 📋 Typed Power BI sections
+For row-aware narratives, bind `Section`, `Section Title`, and `Section Body`, then optionally provide `Section Order`, `Section Kind`, `Section Value`, `Section Status`, `Section Link`, and `Tooltip`. Ordering is explicit and deterministic. Rows have host selection identities, keyboard selection, context menus, formatted text values, and a bounded visible window. The visual never infers business meaning from colors or numbers.
+
 ### 🎨 Customizable Formatting
 Adjust the visual appearance through the Power BI Format pane:
 
@@ -35,6 +41,11 @@ Adjust the visual appearance through the Power BI Format pane:
 | Background Color | Set background fill | #FFFFFF |
 | Padding | Inner spacing (px) | 20 |
 | Show Border | Toggle a rounded border | Off |
+| Show Outline | Display the document outline | On |
+| Show Search | Display local document search | On |
+| Show Trust Status | Display completeness diagnostics | On |
+| Compact / Export Presentation | Reduce authoring chrome | Off |
+| Reduce Motion | Disable document motion | Off |
 
 The visual also honors Power BI's foreground, background, and hyperlink colors in Windows high-contrast mode.
 
@@ -49,7 +60,7 @@ The historical `v1.0.0` package predates the visual's current sanitization and c
 
 ## Usage
 
-1. Add the **Atlyn Markdown Viewer** visual to your report canvas
+1. Add the **Atlyn Document** visual to your report canvas
 2. Create a DAX measure that returns markdown text
 3. Drag the measure to the **Markdown Content** field well
 
@@ -72,6 +83,8 @@ RETURN
 "- Data refreshed daily :clock:" & NL &
 "- Contact the analytics team for questions :email:"
 ```
+
+For a structured narrative, add the typed fields to the corresponding wells. `Section`, `Section Title`, and `Section Body` are required; `Section Order` is recommended because Power BI table rows must not be assumed to be ordered. Use explicit status values such as `good`, `warning`, or `blocked` rather than encoding status in a color or number.
 
 ## Supported Emoji
 
@@ -120,13 +133,23 @@ RETURN
 
 ## Privacy Policy
 
-This visual does **not** collect, store, or automatically transmit user data. Markdown processing happens entirely within the Power BI environment. Choosing an HTTPS link opens that destination through the Power BI host. See [PRIVACY.md](PRIVACY.md) for full details.
+This visual does **not** collect, store, or automatically transmit user data. Markdown processing, parsing, search indexing, and diagnostics happen entirely within the Power BI environment. Choosing an HTTPS link opens that destination through the Power BI host. See [PRIVACY.md](PRIVACY.md) for full details.
 
 ## Supported Content and Export
 
-The visual supports headings, paragraphs, emphasis, lists, blockquotes, tables, details, code, and absolute HTTPS links. Raw HTML is limited to the same safe document elements. Images, media, SVG, scripts, styles, forms, embedded content, relative links, and non-HTTPS links are removed or shown as unsupported text.
+The visual supports semantic headings, paragraphs, emphasis, lists, blockquotes, tables with captions and headers, native disclosures, status callouts, code, emoji, and absolute HTTPS links. Raw HTML is limited to the same safe document elements. Images, media, SVG, scripts, styles, forms, embedded content, relative links, and non-HTTPS links are removed or shown as unsupported text.
 
-Power BI PDF and PowerPoint export captures the visible visual viewport. For long documents, size the visual to the content intended for export or split documentation across report pages.
+The certified rendering policy bounds source content at 512 KiB, logical blocks at 2,000, nesting at 40 levels, and structured rows at a bounded visible window. When a limit or Power BI data reduction applies, the visual shows a limited state and a category-level diagnostic. Removed payloads, URLs, and script text are never copied into diagnostics.
+
+Power BI PDF and PowerPoint export captures the visible visual viewport after rendering completes. Compact presentation reduces authoring chrome, but the visual does not claim that a scrollable document automatically becomes a complete multi-page PDF. For long documents, size the visual to the content intended for export or split documentation across report pages.
+
+## Accessibility and keyboard use
+
+Press **Enter** when Power BI moves focus into the visual. Use the toolbar search field, outline links, native disclosure controls, safe links, and structured row controls with the keyboard. **Escape** returns focus to the visual container. Focus and reading position are restored by stable document identity after equivalent updates. High contrast uses the host palette, status is not conveyed by color alone, and prose reflows while only table regions scroll horizontally.
+
+## Local validation
+
+Run `npm ci` followed by `npm run certification:validate`. The local gate runs ESLint, TypeScript, unit/security tests, `npm audit --audit-level=moderate`, and the certification-audited package command. Generated `dist/` and `.tmp/` output is intentionally ignored and must not be committed.
 
 ## Support
 

@@ -11,13 +11,20 @@ export interface ContextMenuCall {
     position: { x: number; y: number };
 }
 
+export interface TooltipCall {
+    kind: "show" | "move" | "hide";
+    coordinates?: number[];
+}
+
 export interface MockHostHarness {
     host: IVisualHost;
     contextMenuCalls: ContextMenuCall[];
+    tooltipCalls: TooltipCall[];
     eventCalls: string[];
     failureReasons: string[];
     launchedUrls: string[];
     measureIds: string[];
+    tableRowIndexes: number[];
     dataPointSelectionId: ISelectionId;
 }
 
@@ -30,10 +37,12 @@ export interface MockHostOptions {
 
 export function createMockHost(options: MockHostOptions = {}): MockHostHarness {
     const contextMenuCalls: ContextMenuCall[] = [];
+    const tooltipCalls: TooltipCall[] = [];
     const eventCalls: string[] = [];
     const failureReasons: string[] = [];
     const launchedUrls: string[] = [];
     const measureIds: string[] = [];
+    const tableRowIndexes: number[] = [];
     let selectionIdCreationCount = 0;
 
     const dataPointSelectionId = {
@@ -72,6 +81,10 @@ export function createMockHost(options: MockHostOptions = {}): MockHostHarness {
                 measureIds.push(measureId);
                 return builder;
             },
+            withTable: (_table: unknown, rowIndex: number) => {
+                tableRowIndexes.push(rowIndex);
+                return builder;
+            },
             createSelectionId: () => {
                 selectionIdCreationCount += 1;
                 if (
@@ -99,6 +112,18 @@ export function createMockHost(options: MockHostOptions = {}): MockHostHarness {
         createSelectionManager: () => selectionManager,
         createSelectionIdBuilder,
         eventService,
+        tooltipService: {
+            enabled: () => true,
+            show: (options: { coordinates: number[] }) => {
+                tooltipCalls.push({ kind: "show", coordinates: options.coordinates });
+            },
+            move: (options: { coordinates: number[] }) => {
+                tooltipCalls.push({ kind: "move", coordinates: options.coordinates });
+            },
+            hide: () => {
+                tooltipCalls.push({ kind: "hide" });
+            }
+        },
         launchUrl: (url: string) => {
             launchedUrls.push(url);
         }
@@ -107,10 +132,12 @@ export function createMockHost(options: MockHostOptions = {}): MockHostHarness {
     return {
         host,
         contextMenuCalls,
+        tooltipCalls,
         eventCalls,
         failureReasons,
         launchedUrls,
         measureIds,
+        tableRowIndexes,
         dataPointSelectionId
     };
 }
